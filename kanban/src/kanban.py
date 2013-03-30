@@ -7,7 +7,7 @@ Kanban - Agile Workflow
 :Contact: carlo@nce.ufrj.br
 :Date: 2013/03/29
 :Status: This is a "work in progress"
-:Revision: 0.1.5
+:Revision: 0.1.6
 :Home: `Labase <http://labase.selfip.org/>`__
 :Copyright: 2013, `GPL <http://is.gd/3Udt>`__. 
 """
@@ -16,6 +16,7 @@ __version__ = "0.1"
 __date__    = "2013/03/29"
 
 REPO = '/studio/activlets/%s'
+BRYTHON = False
 
 def _logger(*a):
     print(a)
@@ -24,6 +25,7 @@ if not '__package__' in dir():
     import svg
     import html
     logger = log
+    BRYTHON = True
     pass
 else:
     logger = _logger
@@ -79,7 +81,7 @@ class Draggable:
 
 OBID = 0
 
-class Task:#(Draggable):
+class Task(Draggable):
     """ A Task represented by a colored note. :ref:`Task`
     """
     def delete_object(self):
@@ -101,6 +103,7 @@ class Task:#(Draggable):
         self.gui, self.board, self.color = gui, board, color
         self.ob_id, self.top = 'task_%d'%OBID, top
         self.avatar = self._build_color(color, left, top, width)
+        #logger('Task__init__ %s'%[self.gui, color, left, width, board])
         board.register(self)
         OBID += 1
     def _build_color(self, color, left, top, width):
@@ -114,7 +117,6 @@ class Task:#(Draggable):
             ondragover = self._drag_over, ondrop = self._drop)
         return avatar
     """ Interface for something that can be dragged. :ref:`Draggable`
-    """
     def _drag_start(self, ev):
         ev.data[ITEM]=self.ob_id
         ev.data.effectAllowed = 'move'
@@ -126,6 +128,7 @@ class Task:#(Draggable):
     def _drop(self,ev):
         ev.preventDefault()
         item = ev.data[ITEM]
+    """
         
     pass
 
@@ -142,14 +145,14 @@ class Task_panel:
         self.left += self.width
         return panel_div
 
-class Color_tab:#(Draggable):
+class Color_tab(Draggable):
     """ A color markers for new tasks. :ref:`Color_tab`
     """
     def __init__(self,gui, color, left, top, board):
         self.gui, self.color, self.ob_id, self.board = gui, color, color, board
         #self.tab = self._build_tab(color, left, top, 16)
         board.register(self)
-        logger('Color_tab init top %s color %s  tab %s'%(top,color, self))
+        #logger('Color_tab init top %s color %s  tab %s'%(top,color, self))
     def _build_tab(self,gui, color, left, top, width):
         avatar = gui.div('', node= HEAD, draggable=True,
                     id=color, Class="color-tabs")
@@ -166,10 +169,13 @@ class Color_tab:#(Draggable):
     def deploy(self, board, left, top, width):
         """Deploy a new task in a stepboard"""
         task = Task(self.gui, board, self.color, left, top, width)
+        BRYTHON and task.__init__(self.gui, board, self.color, left, top, width)
+
         board.deploy(task)
         return task
     def delete(self, ev):
         pass
+    """ Interface for something that can be dragged. :ref:`Draggable`
     def _drag_start(self, ev):
         ev.data[ITEM]=self.ob_id
         ev.data.effectAllowed = 'move'
@@ -178,6 +184,7 @@ class Color_tab:#(Draggable):
     def _drag_over(self,ev):
         ev.data.dropEffect = 'move'
         ev.preventDefault()
+    """
     def _drop(self,ev):
         ev.preventDefault()
         color_id = ev.data[ITEM]
@@ -204,9 +211,9 @@ class Color_pallete:
         left = 0
         top = 42*i #(i//15)
         gui = self.gui
-        color_tab = Color_tab(gui, color,
-            left , top, board)
-        logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
+        color_tab = Color_tab(gui, color, left , top, board)
+        BRYTHON and color_tab.__init__(gui, color, left , top, board)
+        #logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
         color_tab._build_tab(self.gui,color, left, top, 16)
         return color_tab #(color, color_tab)
         
