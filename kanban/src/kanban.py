@@ -54,7 +54,7 @@ class GUI:
         return confirm(query_text)
     def set_style(self, target, **kwargs):
         """Set the style attribute of a DOM element"""
-        logger('styyle %s'%kwargs)
+        #logger('styyle %s'%kwargs)
         target.style= kwargs
     def set_attrs(self, target, **kwargs):
         """Set the attributes defined as key arguments of a target DOM element"""
@@ -77,23 +77,23 @@ class Task:
             'top':top*68+42,'width':width-4,'height':64, 'backgroundColor':self.color})
         self.board.remove(self)
         board.deploy(self)
+        self.board, self.top  = board, top
     def __init__(self, gui, board, color, left, top, width):
         self.gui, self.board, self.color = gui, board, color
+        self.ob_id, self.top = 'task_%d'%Task.OBID, top
         self.avatar = self._build_color(color, left, top, width)
-        self.ob_id = 'task_%d'%Task.OBID
         board.register(self)
         Task.OBID += 1
     def _build_color(self, color, left, top, width):
-        # create a DIV for each color label
         top = 42 + top*68
-        color_tab = self.gui.div('', node= PANEL, draggable=True,
-                    id='color_%s'%color[1:], Class="task-note")
-        self.gui.set_style(color_tab, **{'position':'absolute','left':left+2,
+        avatar = self.gui.div('', node= PANEL, draggable=True,
+                    id=self.ob_id, Class="task-note")
+        self.gui.set_style(avatar, **{'position':'absolute','left':left+2,
             'top':top,'width':width-4,'height':64, 'backgroundColor':color})
-        self.gui.set_attrs(color_tab,
+        self.gui.set_attrs(avatar,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             ondragover = self._drag_over, ondrop = self._drop)
-        return color_tab
+        return avatar
     def _drag_start(self, ev):
         ev.data[ITEM]=self.ob_id
         ev.data.effectAllowed = 'move'
@@ -116,7 +116,6 @@ class Task_panel:
         self.panels = [self._build_panel(i,color, board)
                        for i, color in enumerate(BACKGROUNDS)]
     def _build_panel(self,i, color, board):
-        # create a DIV for each AREA (ie each country)
         self.width = 80 + (PANELS - i) * 60
         panel_div = Step_board(self.gui, i, color, self.left, self.width, board)
         self.left += self.width
@@ -125,12 +124,20 @@ class Task_panel:
 class Color_tab:
     """ A color markers for new tasks. :ref:`Color_tab`
     """
-    def __init__(self,gui, color, left, top =10, width =16, board= None):
-        logger('Color_tab')
+    def __init__(self,gui, color, left, top, board):
         self.gui, self.color, self.ob_id, self.board = gui, color, color, board
-        #self.tab = self._build_tab(color, left,
-        #                             top =top, width =width)
+        self.tab = self._build_tab(color, left, top, 16)
         board.register(self)
+    def _build_tab(self, color, left, top, width):
+        avatar = self.gui.div('', node= HEAD, draggable=True,
+                    id=color, Class="color-tabs")
+        args = {'position':'absolute','left':left,
+            'top':top, 'width':width, 'height':40, 'backgroundColor':color}
+        self.gui.set_style(avatar, **args)
+        self.gui.set_attrs(avatar,
+            ondragstart = self._drag_start,onmouseover = self._mouse_over,
+            ondragover = self._drag_over, ondrop = self._drop)
+        return avatar
     def get_color(self):
         """Get the color of the tab"""
         return self.color
@@ -139,17 +146,6 @@ class Color_tab:
         task = Task(self.gui, board, self.color, left, top, width)
         board.deploy(task)
         return task
-    def _build_tab(self, color, left, top =10, width =16):
-        # create a DIV for each color label
-        logger('Color_tab')
-        color_tab = self.gui.div('', node= HEAD, draggable=True,
-                    id='color_%s'%color[1:], Class="color-tabs")
-        self.gui.set_style(color_tab, **{'position':'absolute','left':left,
-            'top':top, 'width':width, 'height':40, 'backgroundColor':color})
-        self.gui.set_attrs(color_tab,
-            ondragstart = self._drag_start,onmouseover = self._mouse_over,
-            ondragover = self._drag_over, ondrop = self._drop)
-        return color_tab
     def delete(self, ev):
         pass
     def _drag_start(self, ev):
@@ -170,22 +166,26 @@ class Color_tab:
 class Color_pallete:
     """ A collecion of color markers for new tasks. :ref:`Color_pallete`
     """
-    def __init__(self,gui, board):
+    def __init__(self, gui, board):
         self.gui, self.board = gui, board
-        logger('cColor_pallete')
-        colors = [ self._build_color(i,color, board)
-                       for i, color in enumerate(COLORS)]
-        logger('cColor_pallete %s'%colors)
-        self.colors =dict(colors)
+        #self.colors = [ self._build_color(i,color, board)
+        #               for i, color in enumerate(COLORS)]
+        #self.colors = { color:self._build_color(i,color, board)
+        #               for i, color in enumerate(COLORS)}
+        colors = {}
+        for i, color  in enumerate(COLORS):
+            cl =self._build_color(i,color, board)
+            colors[color] = cl
+        self.colors = colors
     def _build_color(self,i, color, board):
         # create a DIV for each color label
         left = 0
         top = 42*i #(i//15)
-        logger('cColor_pallete %s'%color)
         color_tab = Color_tab(self.gui, color,
-            left , top = top, board= board)
-        color_tab._build_tab(color, left, top = top, width =16)
-        return (color, color_tab)
+            left , top, board)
+        #logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
+        #color_tab._build_tab(self.gui,color, left, top, 16)
+        return color_tab #(color, color_tab)
         
 
 class Step_board:
@@ -203,12 +203,12 @@ class Step_board:
         """Remove a task from a stepboard"""
         def ts (t=task):
             return t
-        ind = [i for i in self.tasks if i is not ts()]
+        ind = [i for i in self.tasks if i is not task]
         logger('task indesx %s'%ind)
         self.tasks= ind
         #self.tasks.remove(task)
         
-        self.panel.remove(task)
+        #self.panel.remove(task)
     def deploy(self, task):
         """Deploy a new task in a stepboard"""
         self.tasks.append(task)
@@ -228,7 +228,6 @@ class Step_board:
     def _drop(self,ev):
         ev.preventDefault()
         color_id = ev.data[ITEM]
-        #item = self.panel.get_tab(color_id)
         item = self.panel.get_item(color_id)
         item.deploy(self, *self._next_position())
     pass

@@ -20,7 +20,7 @@ __date__    = "2013/03/29"
         
 import mocker
 from mocker import Mocker,KWARGS, ARGS, ANY, CONTAINS, MATCH, expect
-from kanban import main
+from kanban import main, Task
 
 class TestMain(mocker.MockerTestCase):
   """Testes unitários para o Kanban"""
@@ -37,6 +37,7 @@ class TestMain(mocker.MockerTestCase):
     self.mock_avt.verify()
     self.mock_avt = None
     self.app = None
+    Task.OBID = 0
     pass
 
   def _expect_all_kanban(self):
@@ -64,15 +65,15 @@ class TestMain(mocker.MockerTestCase):
     "create kanban"
     self._expect_all_kanban()
     self._replay_and_create_main()
-  def _expect_task_creation(self):
+  def _expect_task_creation(self, id='task_0', left =82, top=42, width=316):
     expect(self.mg.preventDefault())
     expect(self.mg.data[ANY]).result('#CCFF66')
     expect(self.ma.deploy(ARGS))
     expect(self.ma.get_color()).result('#CCFF66')
     expect(self.mg.div('', Class='task-note', draggable=True,
-                       id='color_CCFF66', node='panel')).result(self.ma)
+                       id=id, node='panel')).result(self.ma)
     expect(self.mg.set_style(ANY, backgroundColor='#CCFF66',
-                height=64, left=82, position='absolute', top=42, width=316))
+                height=64, left=left, position='absolute', top=top, width=width))
     expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY, onmouseover=ANY))
   def test_create_task(self):
     "create task"
@@ -89,7 +90,7 @@ class TestMain(mocker.MockerTestCase):
     self._expect_all_kanban()
     self._expect_task_creation()
     expect(self.mg.preventDefault())
-    expect(self.mg.data[ANY]).result('task_1')
+    expect(self.mg.data[ANY]).result('task_0')
     expect(self.mg.confirmation(ANY)).result(True)
     expect(self.mg.remove(ANY, 'panel'))
     self._replay_and_create_main()
@@ -99,23 +100,47 @@ class TestMain(mocker.MockerTestCase):
     self.app.head_bar.colors['#CCFF66']._drop(self.mg)
     tasks = self.app.task_bar.panels[0].tasks
     assert not tasks,tasks
+  def _expect_task_move(self, task = 'task_0',left =402, top=42, width=256):
+    "move atask"
+    expect(self.mg.preventDefault())
+    expect(self.mg.data[ANY]).result(task)
+    expect(self.mg.set_style(ANY, backgroundColor='#CCFF66', height=64
+      , left=left, position='absolute', top=top, width=width))
   def test_create_task_and_move(self):
     "create task and move"
     self._expect_all_kanban()
     self._expect_task_creation()
-    expect(self.mg.preventDefault())
-    expect(self.mg.data[ANY]).result('task_2')
-    expect(self.mg.set_style(ANY, backgroundColor='#CCFF66', height=64, left=402,
-                        position='absolute', top=42, width=256))
+    self._expect_task_move()#(task = 'task_',left =402, top=42, width=256)
     self._replay_and_create_main()
     assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
-    assert 'task_2' in self.app.items, self.app.items
+    assert 'task_0' in self.app.items, self.app.items
     self.app.task_bar.panels[1]._drop(self.mg)
     tasks = self.app.task_bar.panels[0].tasks
     assert not tasks,tasks
-
+    assert  self.app.get_item('task_0'),self.app.items
+  def test_create_two_task_and_move(self):
+    "create two tasks and move one"
+    self._expect_all_kanban()
+    self._expect_task_creation()
+    self._expect_task_creation(id= 'task_1', left =402, top=42, width=256)
+    self._expect_task_move(top=110)#(task = 'task_',left =402, top=42, width=256)
+    self._replay_and_create_main()
+    assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
+    #tab = self.app.head_bar.colors[0]
+    self.app.task_bar.panels[0]._drop(self.mg)
+    assert 'task_0' in self.app.items, self.app.items
+    self.app.task_bar.panels[1]._drop(self.mg)
+    assert 'task_1' in self.app.items, self.app.items
+    self.app.task_bar.panels[1]._drop(self.mg)
+    assert 'task_1' in self.app.items, self.app.items
+    tasks = self.app.task_bar.panels[0].tasks
+    tasks1 = self.app.task_bar.panels[1].tasks
+    task0, task1 =self.app.get_item('task_0'),self.app.get_item('task_1')
+    assert not tasks,tasks
+    assert len(tasks1)==2,tasks1
+    assert (task0.top, task1.top) ==(1,0),(task0.top, task1.top)
 if __name__ == '__main__':
     import unittest
     unittest.main()
