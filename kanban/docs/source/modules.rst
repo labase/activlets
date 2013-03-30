@@ -52,6 +52,18 @@ Task_panel
 .. note::
    Interface Unit.
 
+.. _Color_tab:
+
+Color_tab
+====================
+
+.. seealso::
+
+   Class :class:`kanban.Color_tab`
+
+.. note::
+   Factory Unit.
+
 .. _color_pallete:
 
 Color_pallete

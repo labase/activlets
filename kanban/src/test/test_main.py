@@ -48,16 +48,13 @@ class TestMain(mocker.MockerTestCase):
       position='absolute')).count(1,16)
     expect(self.mg.set_attrs(ANY, ondragstart = ANY,onmouseover = ANY,
             ondragover = ANY, ondrop = ANY)).count(1,16)
-    #expect(self.mg.handler(ARGS)).count(1,7)
-    #expect(self.mg.image(ARGS,KWARGS)).count(1)
-    #expect(self.mg.rect(ARGS,KWARGS)).count(1,2).result(self.mg)
-    #expect(self.mg.dialog(ARGS,KWARGS)).count(1,2).result(self.mg)
-    #expect(self.mg.hide()).count(0,2).result(self.mg)
-    #expect(self.mg.text(ARGS,KWARGS)).result(self.mg).count(1,6)
-    #expect(self.ma.move(ARGS))
-    #expect(self.mg.textarea(ARGS))
-    #expect(self.mg(ARGS)).count(1,96).result(self.ma)
-    ##expect(self.mg.textContent = ANY).count(0,6)
+    # create panels
+    expect(self.mg.div('', KWARGS, Class='task-panel', 
+                       node='panel')).result(self.ma).count(1,4)
+    expect(self.mg.set_style(ANY, KWARGS, top = 40, height= 400, 
+      position='absolute')).count(1,4)
+    expect(self.mg.set_attrs(ANY, 
+            ondragover = ANY, ondrop = ANY)).count(1,4)
   def _replay_and_create_main(self,p = '.&.'):
     "create main"
     self.mock_gui.replay()
@@ -67,62 +64,25 @@ class TestMain(mocker.MockerTestCase):
     "create kanban"
     self._expect_all_kanban()
     self._replay_and_create_main()
-  def _test_load_figures(self):
-    "load figures"
+  def test_crete_task(self):
+    "create task"
     self._expect_all_kanban()
-    expect(self.mg.request(ARGS)).result(self.ma)
+    expect(self.mg.preventDefault())
+    expect(self.mg.data[ANY]).result('#CCFF66')
+    expect(self.ma.deploy(ARGS))
+    expect(self.ma.get_color()).result('#CCFF66')
+    expect(self.mg.div('', Class='task-note', draggable=True,
+                       id='color_CCFF66', node='panel')).result(self.ma)
+    expect(self.mg.set_style(ANY, backgroundColor='#CCFF66',
+                height=64, left=82, position='absolute', top=42, width=316))
+    expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY, onmouseover=ANY))
     self._replay_and_create_main()
-    class Response:
-      text =str(dict(status=0,result=['%s%02d_%02d.png'%(name,kind,piece)
-        for name in 'piece jigs puzzle'.split()
-        for piece in range(9) for kind in [0,1]]))
-    self.app._load_figures(Response)
-    assert 'piece00_00.png' in str(self.app.piece_imgs), 'self.app.pieces %s'%self.app.piece_imgs
-    assert 'puzzle00_00.png' in str(self.app.puzzle_imgs), 'self.app.puzzle_imgs %s'%self.app.puzzle_imgs
-    assert 'jigs00_00.png' in str(self.app.jig_imgs), 'self.app.jig_imgs %s'%self.app.jig_imgs
-  def _test_load_scenes(self):
-    "load scenes"
-    self._expect_all_place()
-    expect(self.mg.request(ARGS))
-    expect(self.mg.group(KWARGS)).count(1,3).result(self.ma)
-    expect(self.mg.ellipse(KWARGS)).count(1,3).result(self.ma)
-    expect(self.ma.setAttribute(ARGS)).count(1,3)
-    expect(self.mg.clear()).count(1,2)
-    expect(self.mg.set(ARGS)).count(1,3)
-    expect(self.mg.image(KWARGS)).count(1,9).result(self.ma)
-    expect(self.mg.text(ARGS,KWARGS)).count(1,9).result(self.ma)
-    expect(self.ma.addEventListener(ARGS)).count(1,80)
-    [expect(self.mg.text(ind,KWARGS)).result(self.ma).count(7) for ind in range(9)]
-    #---IMAGES---
-    expect(self.mg.image(KWARGS)).count(1,9).result(self.ma)
-    #---PHASES---
-    expect(self.mg.group(KWARGS)).count(1,3).result(self.ma)
-    expect(self.mg.image(KWARGS)).count(1,9).result(self.ma)#jigs
-    expect(self.mg.image(KWARGS)).count(1,9).result(self.ma)#jigs
-    #---FACES---
-    expect(self.mg.image(KWARGS)).count(1,3).result(self.ma)#jigs
-    expect(self.mg.clear()).count(1,21)
-    expect(self.mg.image(KWARGS)).count(1,80).result(self.ma)#jigs
-    expect(self.mg.set(ARGS)).count(1,21)
-    expect(self.mg.group(KWARGS)).count(1,31).result(self.ma)
-    #---MARKERS---
-    expect(self.mg.rect(KWARGS)).count(1,3*9).result(self.ma)#jigs
-    expect(self.ma.addEventListener(ARGS)).count(1,81)
-    #---START---
-    expect(self.ma.setAttribute(ARGS)).count(1,3)
-    expect(self.ma.setAttribute(ARGS)).count(1,5*9)
-    self._replay_and_create_place()
-    class Response:
-      text =str(dict(status=0,result=['%s%02d_%02d.png'%(name,kind,piece)
-        for name in 'piece jigs puzzle'.split()
-        for piece in range(9) for kind in [0,1]]))
-    self.app._load_figures(Response)
-    assert 'puzzle00_00.png' in str(self.app.puzzle_imgs), 'self.app.puzzle_imgs %s'%self.app.puzzle_imgs
-    Response.text =str(dict(status=0,result=['%s%02d_%02d.png'%(name,kind,piece)
-        for name in 'face back'.split()
-        for piece in range(3) for kind in range(7)]))
-    self.app._load_scenes(Response)
-    assert len(self.app.pieces[0]) == 9, 'self.app.pieces %s'%self.app.pieces
+    expect
+    assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
+    #tab = self.app.head_bar.colors[0]
+    self.panel = self.app.task_bar.panels[0]._drop(self.mg)
+    tasks = self.app.task_bar.panels[0].tasks
+    assert tasks,tasks
 
 if __name__ == '__main__':
     import unittest

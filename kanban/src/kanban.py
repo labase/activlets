@@ -31,7 +31,8 @@ else:
 
 COLORS = """#CCFF66 #669933 #CCFFCC #99CC33 #CC6699 #993366 #FFCCCC #CC3399
 #FFCC66 #996633 #FFCCCC #CC9933 #6666CC #336699 #CCCCFF #3366CC""".split()
-BACKGROUNDS ="#330066 #330099 #CCCCFF #9999FF".split()
+BACKGROUNDS ="#666666 #999999 #CCCCCC #EEEEEE".split()
+PANELS = len(BACKGROUNDS)
 HEAD, LABELS, PANEL, ITEM = 'head labels panel item'.split()
 
 class GUI:
@@ -57,68 +58,93 @@ class GUI:
 class Task_panel:
     """ A panel representing several steps of the task flow. :ref:`Task_panel`
     """
-    def __init__(self,gui):
-        self.left = 80
-        self.width = 100
-        PANELS = len(BACKGROUNDS)
-        self.panels = [self._build_panel(i,color)
+    def __init__(self,gui, board):
+        self.gui, self.left, self.width = gui, 80, 100
+        self.panels = [self._build_panel(i,color, board)
                        for i, color in enumerate(BACKGROUNDS)]
-    def _build_panel(self,i, color):
+    def _build_panel(self,i, color, board):
         # create a DIV for each AREA (ie each country)
-        ctag = gui.div('', node = PANEL, draggable=False, id='panel%d'%i,
-                       Class="task-panel")
-        self.width = 100 + (PANELS - i) * 60
-        _top = 20 #100+30*(i-15*(i//15))
-        ctag.style= {'position':'absolute','left':self.left,'top':_top,
-            'width':self.width,'height':400, 'background-color':color}
+        self.width = 80 + (PANELS - i) * 60
+        panel_div = Step_board(self.gui, i, color, self.left, self.width, board)
         self.left += self.width
-        ctag.ondragover = self._drag_over
-        ctag.ondrop = self._drop
-        return ctag
+        return panel_div
+
+class Color_tab:
+    """ A color markers for new tasks. :ref:`Color_tab`
+    """
+    def __init__(self,gui, color, left, top =10, width =16, board= None):
+        self.gui, self.color, self.board = gui, color, board
+        self.tab = self._build_color(color=color, left=left,
+                                     top =top, width =width)
+    def get_color(self):
+        """Get the color of the tab"""
+        return self.color
+    def deploy(self, board, left, top, width):
+        """Deploy a new task in a stepboard"""
+        task = Task(self.gui, board, self.color, left, top, width)
+        board.deploy(task)
+        return task
+    def _build_color(self, color, left, top =10, width =16):
+        # create a DIV for each color label
+        color_tab = self.gui.div('', node= HEAD, draggable=True,
+                    id='color_%s'%color[1:], Class="color-tabs")
+        self.gui.set_style(color_tab, **{'position':'absolute','left':left,
+            'top':top, 'width':width, 'height':16, 'backgroundColor':color})
+        self.gui.set_attrs(color_tab,
+            ondragstart = self._drag_start,onmouseover = self._mouse_over,
+            ondragover = self._drag_over, ondrop = self._drop)
+        return color_tab
+    def delete(self, ev):
+        pass
+    def _drag_start(self, ev):
+        ev.data[ITEM]= self.color#ev.target.id
+        ev.data.effectAllowed = 'move'
+    def _mouse_over(self,ev):
+        ev.target.style.cursor = "pointer"
     def _drag_over(self,ev):
         ev.data.dropEffect = 'move'
         ev.preventDefault()
     def _drop(self,ev):
         ev.preventDefault()
-        src_id = ev.data[ITEM]
-        elt = self.panels[src_id]
-        if ev.target.id==countries[int(src_id)]:
-            # dropped on the right country
-            elt.style.left = ev.x-elt.clientWidth/2
-            elt.style.top = ev.y-elt.clientHeight/2
-            elt.draggable = False # don't drag any more
-            elt.style.cursor = "auto"
-        else:
-            # back where we started
-            go_back(elt,ev)
+        color_id = ev.data[ITEM]
+        item = self.board.get_tab(color_id)
+        
+        if confirm('Deseja realmente apagar %?'% item.identify()):
+            item.delete()
 
 class Color_pallete:
     """ A collecion of color markers for new tasks. :ref:`Color_pallete`
     """
-    def __init__(self,gui):
-        self.gui = gui
-        self.colors = [self._build_color(i,color)
-                       for i, color in enumerate(COLORS)]
-    def _build_color(self,i, color):
+    def __init__(self,gui, board):
+        self.gui, self.board = gui, board
+        self.colors =dict([ self._build_color(i,color, board)
+                       for i, color in enumerate(COLORS)])
+    def _build_color(self,i, color, board):
         # create a DIV for each color label
-        color_tab = self.gui.div('', node= HEAD, draggable=True,
-                    id='color_%s'%color[1:], Class="color-tabs")
-        #left = 10+110*(i//15)
-        #_top = 100+30*(i-15*(i//15))
         left = 10+20*i #(i//15)
-        _top = 10 #100+30*(i-15*(i//15))
-        #color_tab.style= {'position':'absolute','left':left,'top':_top,
-        #    'width':16,'height':16, 'background-color_tab':color_tab}
-        self.gui.set_style(color_tab, **{'position':'absolute','left':left,
-            'top':_top,'width':16,'height':16, 'backgroundColor':color})
+        color_tab = Color_tab(self.gui, color = color, left = left, board= board)
+        return (color, color_tab)
+        
+
+class Task:
+    """ A Task represented by a colored note. :ref:`Task`
+    """
+    def __init__(self, gui, board, color, left, top, width):
+        self.gui, self.board, self.color = gui, board, color
+        self._build_color(color, left, top, width)
+    def identify(self):
+        """Get the color of the tab"""
+        return self.color
+    def _build_color(self, color, left, top, width):
+        # create a DIV for each color label
+        top = 42 + top*68
+        self.task = color_tab = self.gui.div('', node= PANEL, draggable=True,
+                    id='color_%s'%color[1:], Class="task-note")
+        self.gui.set_style(color_tab, **{'position':'absolute','left':left+2,
+            'top':top,'width':width-4,'height':64, 'backgroundColor':color})
         self.gui.set_attrs(color_tab,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             ondragover = self._drag_over, ondrop = self._drop)
-        #color_tab.ondragstart = self._drag_start
-        #color_tab.onmouseover = self._mouse_over
-        ## drag and drop event handlers
-        #color_tab.ondragover = self._drag_over
-        #color_tab.ondrop = self._drop
         return color_tab
     def _drag_start(self, ev):
         ev.data[ITEM]=ev.target.id
@@ -134,32 +160,39 @@ class Color_pallete:
         if self.gui.confirm('Deseja realmente apagar %?'% item.identify()):
             item.delete()
         
-
-class Task:
-    """ A Kanban workflow plugin for the Activ platform. :ref:`Task`
-    """
     pass
 
 class Step_board:
     """ A board to hold tasks within a step in the task workflow. :ref:`Step_board`
     """
-    def __init__(self,i, color, left, width, panel):
+    def __init__(self, gui, i, color, left, width, panel):
         # create a DIV for each AREA (ie each country)
-        self.panel = panel
-        self.board = board = gui.div('', node = PANEL, draggable=False,
-                id='panel%d'%i, Class="task-panel")
-        _top = 20 #100+30*(i-15*(i//15))
-        board.style= {'position':'absolute','left':left,'top':_top,
-            'width':width,'height':400, 'background-color':color}
-        board.ondragover = self._drag_over
-        board.ondrop = self._drop
+        self.gui, self.left, self.width, self.panel = gui, left, width, panel
+        self.tasks = []
+        self._build_board(i, color)
+    def deploy(self, task):
+        """Deploy a new task in a stepboard"""
+        self.tasks.append(task)
+    def _build_board(self,i, color):
+        self.board = panel_div = self.gui.div('', node = PANEL, draggable=False
+                    , id='panel%d'%i,   Class="task-panel")
+        _top = 40
+        self.gui.set_style(panel_div, **{'position':'absolute','left':self.left,
+            'top':_top,'width':self.width,'height':400, 'backgroundColor':color})
+        self.gui.set_attrs(panel_div,
+            ondragover = self._drag_over, ondrop = self._drop)
+    def _next_position(self):
+        return (self.left, len(self.tasks), self.width)
     def _drag_over(self,ev):
         ev.data.dropEffect = 'move'
         ev.preventDefault()
     def _drop(self,ev):
         ev.preventDefault()
-        task_id = ev.data[ITEM]
-        self.panel.deploy_task(task_id)
+        color_id = ev.data[ITEM]
+        logger('deploy color %s %s %s'%(color_id, color_id, self._next_position()))
+        item = self.panel.get_tab(color_id)
+        logger('deploy color %s %s %s'%(item, color_id, self._next_position()))
+        item.deploy(self, *self._next_position())
     pass
 
 class Dust_bin:
@@ -170,11 +203,15 @@ class Dust_bin:
 class Kanban:
     """ A Kanban workflow plugin for the Activ platform. :ref:`kanban`
     """
+    def get_tab(self, color):
+        """Get a tab with the given key color"""
+        return self.head_bar.colors[color]
     def _build_project_selector(self):
-        return Color_pallete(self.gui)
+        return Color_pallete(self.gui, self)
     def _build_label_selector(self):
         pass
     def _build_workflow_area(self):
+        return Task_panel(self.gui, self)
         pass
     def __init__(self,gui):
         self.gui = gui
