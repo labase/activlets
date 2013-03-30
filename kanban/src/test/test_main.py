@@ -9,7 +9,7 @@ Kanban - Agile Workflow - Main Test
 :Contact: carlo@nce.ufrj.br
 :Date: 2013/03/29
 :Status: This is a "work in progress"
-:Revision: 0.1.0
+:Revision: 0.1.5
 :Home: `Labase <http://labase.selfip.org/>`__
 :Copyright: 2013, `GPL <http://is.gd/3Udt>`__. 
 """
@@ -20,7 +20,8 @@ __date__    = "2013/03/29"
         
 import mocker
 from mocker import Mocker,KWARGS, ARGS, ANY, CONTAINS, MATCH, expect
-from kanban import main, Task
+from kanban import main
+import kanban
 
 class TestMain(mocker.MockerTestCase):
   """Testes unitários para o Kanban"""
@@ -37,7 +38,7 @@ class TestMain(mocker.MockerTestCase):
     self.mock_avt.verify()
     self.mock_avt = None
     self.app = None
-    Task.OBID = 0
+    kanban.OBID = 0
     pass
 
   def _expect_all_kanban(self):

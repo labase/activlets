@@ -38,6 +38,18 @@ Kanban
    Class :class:`kanban.Kanban`
 
 .. note::
+   Main Unit.
+
+.. _Draggable:
+
+Draggable
+====================
+
+.. seealso::
+
+   Class :class:`kanban.Draggable`
+
+.. note::
    Interface Unit.
 
 .. _task_panel:
@@ -50,7 +62,7 @@ Task_panel
    Class :class:`kanban.Task_panel`
 
 .. note::
-   Interface Unit.
+   Model Unit.
 
 .. _Color_tab:
 
@@ -62,7 +74,7 @@ Color_tab
    Class :class:`kanban.Color_tab`
 
 .. note::
-   Factory Unit.
+   Visual Unit.
 
 .. _color_pallete:
 
@@ -74,7 +86,7 @@ Color_pallete
    Class :class:`kanban.Color_pallete`
 
 .. note::
-   Factory Unit.
+   Model Unit.
 
 .. _task:
 
@@ -86,7 +98,7 @@ Task
    Class :class:`kanban.Task`
 
 .. note::
-   Interface Unit.
+   Visual Unit.
 
 .. _step_board:
 
@@ -98,7 +110,7 @@ Step_board
    Class :class:`kanban.Step_board`
 
 .. note::
-   Interface Unit.
+   Visual Unit.
 
 .. _dust_bin:
 
@@ -110,5 +122,5 @@ Dust_bin
    Class :class:`kanban.Dust_bin`
 
 .. note::
-   Interface Unit.
+   Visual Unit.
 

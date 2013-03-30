@@ -7,7 +7,7 @@ Kanban - Agile Workflow
 :Contact: carlo@nce.ufrj.br
 :Date: 2013/03/29
 :Status: This is a "work in progress"
-:Revision: 0.1.0
+:Revision: 0.1.5
 :Home: `Labase <http://labase.selfip.org/>`__
 :Copyright: 2013, `GPL <http://is.gd/3Udt>`__. 
 """
@@ -61,10 +61,27 @@ class GUI:
         for attr, value in kwargs.items():
             setattr( target, attr, value)
 
-class Task:
+
+class Draggable:
+    """ Interface for something that can be dragged. :ref:`Draggable`
+    """
+    def _drag_start(self, ev):
+        ev.data[ITEM]=self.ob_id
+        ev.data.effectAllowed = 'move'
+    def _mouse_over(self,ev):
+        ev.target.style.cursor = "pointer"
+    def _drag_over(self,ev):
+        ev.data.dropEffect = 'move'
+        ev.preventDefault()
+    def _drop(self,ev):
+        ev.preventDefault()
+        item = ev.data[ITEM]
+
+OBID = 0
+
+class Task:#(Draggable):
     """ A Task represented by a colored note. :ref:`Task`
     """
-    OBID = 0
     def delete_object(self):
         """Delete this item from Board and Dom"""
         if self.gui.confirmation('Deseja realmente apagar %s?'% self.ob_id):
@@ -73,17 +90,19 @@ class Task:
             self.gui.remove(self, PANEL)
     def deploy(self, board, left, top, width):
         """Deploy this task in a stepboard"""
+        logger('A Task deploy id %s  toid %d'%(self.ob_id, OBID))
         self.gui.set_style(self.avatar, **{'position':'absolute','left':left+2,
             'top':top*68+42,'width':width-4,'height':64, 'backgroundColor':self.color})
         self.board.remove(self)
         board.deploy(self)
         self.board, self.top  = board, top
     def __init__(self, gui, board, color, left, top, width):
+        global OBID
         self.gui, self.board, self.color = gui, board, color
-        self.ob_id, self.top = 'task_%d'%Task.OBID, top
+        self.ob_id, self.top = 'task_%d'%OBID, top
         self.avatar = self._build_color(color, left, top, width)
         board.register(self)
-        Task.OBID += 1
+        OBID += 1
     def _build_color(self, color, left, top, width):
         top = 42 + top*68
         avatar = self.gui.div('', node= PANEL, draggable=True,
@@ -94,6 +113,8 @@ class Task:
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             ondragover = self._drag_over, ondrop = self._drop)
         return avatar
+    """ Interface for something that can be dragged. :ref:`Draggable`
+    """
     def _drag_start(self, ev):
         ev.data[ITEM]=self.ob_id
         ev.data.effectAllowed = 'move'
@@ -121,20 +142,21 @@ class Task_panel:
         self.left += self.width
         return panel_div
 
-class Color_tab:
+class Color_tab:#(Draggable):
     """ A color markers for new tasks. :ref:`Color_tab`
     """
     def __init__(self,gui, color, left, top, board):
         self.gui, self.color, self.ob_id, self.board = gui, color, color, board
-        self.tab = self._build_tab(color, left, top, 16)
+        #self.tab = self._build_tab(color, left, top, 16)
         board.register(self)
-    def _build_tab(self, color, left, top, width):
-        avatar = self.gui.div('', node= HEAD, draggable=True,
+        logger('Color_tab init top %s color %s  tab %s'%(top,color, self))
+    def _build_tab(self,gui, color, left, top, width):
+        avatar = gui.div('', node= HEAD, draggable=True,
                     id=color, Class="color-tabs")
         args = {'position':'absolute','left':left,
             'top':top, 'width':width, 'height':40, 'backgroundColor':color}
-        self.gui.set_style(avatar, **args)
-        self.gui.set_attrs(avatar,
+        gui.set_style(avatar, **args)
+        gui.set_attrs(avatar,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             ondragover = self._drag_over, ondrop = self._drop)
         return avatar
@@ -149,7 +171,7 @@ class Color_tab:
     def delete(self, ev):
         pass
     def _drag_start(self, ev):
-        ev.data[ITEM]= self.color#ev.target.id
+        ev.data[ITEM]=self.ob_id
         ev.data.effectAllowed = 'move'
     def _mouse_over(self,ev):
         ev.target.style.cursor = "pointer"
@@ -181,10 +203,11 @@ class Color_pallete:
         # create a DIV for each color label
         left = 0
         top = 42*i #(i//15)
-        color_tab = Color_tab(self.gui, color,
+        gui = self.gui
+        color_tab = Color_tab(gui, color,
             left , top, board)
-        #logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
-        #color_tab._build_tab(self.gui,color, left, top, 16)
+        logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
+        color_tab._build_tab(self.gui,color, left, top, 16)
         return color_tab #(color, color_tab)
         
 
@@ -207,8 +230,6 @@ class Step_board:
         logger('task indesx %s'%ind)
         self.tasks= ind
         #self.tasks.remove(task)
-        
-        #self.panel.remove(task)
     def deploy(self, task):
         """Deploy a new task in a stepboard"""
         self.tasks.append(task)
