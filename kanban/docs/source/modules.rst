@@ -52,7 +52,7 @@ Draggable
 .. note::
    Interface Unit.
 
-.. _Draggable:
+.. _Composite:
 
 Composite
 ====================

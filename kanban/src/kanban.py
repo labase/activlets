@@ -84,9 +84,7 @@ class Draggable:
         """Template action when element receives a dropped item"""
         pass
 
-NullContainer = None
-
-class Composite:
+class Composite(Draggable):
     """ Interface of containement, contained by and contains peers. :ref:`Composite`
     """
     def get_dimensions(self):
@@ -103,42 +101,29 @@ class Composite:
         self.avatar = self.gui.div('', node = node, draggable= drag
                     , id=obid,   Class=clazz)
         dims = self.get_dimensions()
-        self.arrange(dims['left'],dims['top'],dims['width'],dims['height'], 0)
+        self.arrange(dims['left'],dims['top'],dims['width'],dims['height'], dims['margin'])
         gui.set_attrs(self.avatar, **events)
     def append(self, component):
         """Append a new component."""
-        self.itens.append(component)
-        component.attach(self)
+        self.items.append(component)
     def remove(self, component):
         """Remove a  component."""
-        self.itens.remove(component)
-        self._rearrange_components()
-        component.dettach(self)
-    def attach(self, container):
+        self.items.remove(component)
+        self._rearrange_components(component)
+    def attach(self, container, dims):
         """attach to a new container."""
-        self.container.dettach(self)
+        self.container.remove(self)
         self.container = container
-        component.attach(self)
-    def dettach(self, component):
-        """dettach from previous container."""
-        class NullContainer:
-            def _null_method(self, *args):
-                pass
-            def __call__(self, *args):
-                return self
-            def __init__(self):
-                def _self(s=self):
-                    return s
-                global CN, NullContainer
-                __ = [self.__setattr__(m,self._null_method) for m in 
-                    'append remove attach dettach get_dimensions'.split()]
-                NullContainer = _self
-                               
-        self.container = NullContainer()
- 
+        self.top, self.width = dims['top'],dims['width']
+        self.arrange(dims['left'],self.top*68+42,self.width,dims['height'], dims['margin'])
+        container.append(self)
+    def _rearrange_components(self, component):
+        """dettach from this container and sort components."""
+        pass
+
 OBID = 0
 
-class Task(Draggable):
+class Task(Composite):
     """ A Task represented by a colored note. :ref:`Task`
     """
     def delete_object(self):
@@ -147,32 +132,21 @@ class Task(Draggable):
             self.container.remove(self)
             logger('delete %s'%self.ob_id)
             self.gui.remove(self, PANEL)
-    def deploy(self, container, left, top, width):
-        """Deploy this task in a stepboard"""
-        logger('A Task deploy id %s  toid %d'%(self.ob_id, OBID))
-        self.gui.set_style(self.avatar, **{'position':'absolute','left':left+2,
-            'top':top*68+42,'width':width-4,'height':64, 'backgroundColor':self.color})
-        self.container.remove(self)
-        container.deploy(self)
-        self.container, self.top  = container, top
     def __init__(self, gui, container, color, left, top, width):
         global OBID
         self.gui, self.container, self.color = gui, container, color
-        self.ob_id, self.top = 'task_%d'%OBID, top
-        self.avatar = self._build_color(color, left, top, width)
-        #logger('Task__init__ %s'%[self.gui, color, left, width, container])
+        self.ob_id, self.top, self.width = 'task_%d'%OBID, top, width
+        self.left = left
         container.register(self)
         OBID += 1
-    def _build_color(self, color, left, top, width):
-        top = 42 + top*68
-        avatar = self.gui.div('', node= PANEL, draggable=True,
-                    id=self.ob_id, Class="task-note")
-        self.gui.set_style(avatar, **{'position':'absolute','left':left+2,
-            'top':top,'width':width-4,'height':64, 'backgroundColor':color})
-        self.gui.set_attrs(avatar,
-            ondragstart = self._drag_start,onmouseover = self._mouse_over,
-            ondragover = self._drag_over, ondrop = self._drop)
-        return avatar
+        events = dict(ondragover = self._drag_over, ondrop = self._drop,
+            ondragstart = self._drag_start,onmouseover = self._mouse_over)
+        self._build_avatar(gui, self.ob_id, color, PANEL, "task-note", True, events)
+    def get_dimensions(self):
+        """get dimensions for component."""
+        dims = dict(left = self.left, top = 42 + self.top*68,
+                width = self.width, height = 68, margin=4)
+        return dims
 
 class Task_panel:
     """ A panel representing several steps of the task flow. :ref:`Task_panel`
@@ -209,13 +183,12 @@ class Color_tab(Draggable):
     def get_color(self):
         """Get the color of the tab"""
         return self.color
-    def deploy(self, container, left, top, width):
+    def attach(self, container, dims):
         """Deploy a new task in a stepboard"""
+        left, top, width = dims['left'],dims['top'],dims['width']
         task = Task(self.gui, container, self.color, left, top, width)
         BRYTHON and task.__init__(self.gui, container, self.color, left, top, width)
-
-        container.deploy(task)
-        return task
+        container.append(task)
     def delete(self, ev):
         pass
     def do_drop(self,item):
@@ -263,6 +236,9 @@ class Step_board(Composite):
         dims = dict(left = self.left, top = 40,
                 width = self.width, height = 500, margin=0)
         return dims
+    def get_item(self, item):
+        """Get a tab with the given object id key"""
+        return self.container.get_item(item)
     def register(self, item):
         """Register an item  with the given object id key"""
         self.container.register(item)
@@ -274,19 +250,16 @@ class Step_board(Composite):
         logger('task indesx %s'%ind)
         self.items= ind
         #self.items.remove(task)
-    def deploy(self, task):
-        """Deploy a new task in a stepboard"""
-        self.items.append(task)
     def _next_position(self):
+        return dict(left=self.left, top=len(self.items), width=self.width,
+                    height = 68, margin=4)
         return (self.left, len(self.items), self.width)
-    def _drag_over(self,ev):
-        ev.data.dropEffect = 'move'
-        ev.preventDefault()
-    def _drop(self,ev):
-        ev.preventDefault()
-        color_id = ev.data[ITEM]
-        item = self.container.get_item(color_id)
-        item.deploy(self, *self._next_position())
+    def _drag_start(self, ev):
+        pass
+    def _mouse_over(self,ev):
+        pass
+    def do_drop(self,item):
+        item.attach(self,self._next_position())
     pass
 
 class Dust_bin:
