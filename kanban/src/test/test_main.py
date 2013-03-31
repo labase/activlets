@@ -84,7 +84,7 @@ class TestMain(mocker.MockerTestCase):
     assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
-    tasks = self.app.task_bar.panels[0].tasks
+    tasks = self.app.task_bar.panels[0].items
     assert tasks,tasks
   def test_create_task_and_delete(self):
     "create task and delete"
@@ -99,7 +99,7 @@ class TestMain(mocker.MockerTestCase):
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
     self.app.head_bar.colors['#CCFF66']._drop(self.mg)
-    tasks = self.app.task_bar.panels[0].tasks
+    tasks = self.app.task_bar.panels[0].items
     assert not tasks,tasks
   def _expect_task_move(self, task = 'task_0',left =402, top=42, width=256):
     "move atask"
@@ -118,7 +118,7 @@ class TestMain(mocker.MockerTestCase):
     self.app.task_bar.panels[0]._drop(self.mg)
     assert 'task_0' in self.app.items, self.app.items
     self.app.task_bar.panels[1]._drop(self.mg)
-    tasks = self.app.task_bar.panels[0].tasks
+    tasks = self.app.task_bar.panels[0].items
     assert not tasks,tasks
     assert  self.app.get_item('task_0'),self.app.items
   def test_create_two_task_and_move(self):
@@ -136,8 +136,8 @@ class TestMain(mocker.MockerTestCase):
     assert 'task_1' in self.app.items, self.app.items
     self.app.task_bar.panels[1]._drop(self.mg)
     assert 'task_1' in self.app.items, self.app.items
-    tasks = self.app.task_bar.panels[0].tasks
-    tasks1 = self.app.task_bar.panels[1].tasks
+    tasks = self.app.task_bar.panels[0].items
+    tasks1 = self.app.task_bar.panels[1].items
     task0, task1 =self.app.get_item('task_0'),self.app.get_item('task_1')
     assert not tasks,tasks
     assert len(tasks1)==2,tasks1

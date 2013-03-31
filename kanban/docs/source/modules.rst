@@ -52,6 +52,18 @@ Draggable
 .. note::
    Interface Unit.
 
+.. _Draggable:
+
+Composite
+====================
+
+.. seealso::
+
+   Class :class:`kanban.Composite`
+
+.. note::
+   Interface Unit.
+
 .. _task_panel:
 
 Task_panel
