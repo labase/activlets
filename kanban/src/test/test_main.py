@@ -23,6 +23,7 @@ from mocker import Mocker,KWARGS, ARGS, ANY, CONTAINS, MATCH, expect
 from kanban import main
 import kanban
 
+TABCOLOR = '#F9D1D1'
 class TestMain(mocker.MockerTestCase):
   """Testes unitários para o Kanban"""
 
@@ -45,15 +46,15 @@ class TestMain(mocker.MockerTestCase):
     "main class expectations"
     # create colors
     expect(self.mg.div('', KWARGS, Class='color-tabs', draggable=True,
-                       node='head')).result(self.ma).count(1,16)
-    expect(self.mg.set_style(ANY, KWARGS, left = 0, height= 40, width= 16,
-      position='absolute')).count(1,16)
+                       node='head')).result(self.ma).count(1,24)
+    expect(self.mg.set_style(ANY, KWARGS, height= 16, width= 36,
+      position='absolute')).count(1,24)
     expect(self.mg.set_attrs(ANY, ondragstart = ANY,onmouseover = ANY,
-            ondragover = ANY, ondrop = ANY)).count(1,16)
+            ondragover = ANY, ondrop = ANY)).count(1,24)
     # create panels
     expect(self.mg.div('', KWARGS, Class='task-panel', 
                        node='panel')).result(self.ma).count(1,4)
-    expect(self.mg.set_style(ANY, KWARGS, top = 40, height= 500, 
+    expect(self.mg.set_style(ANY, KWARGS, top = 40, height= 420, 
       position='absolute')).count(1,4)
     expect(self.mg.set_attrs(ANY, 
             ondragover = ANY, ondrop = ANY)).count(1,4)
@@ -68,20 +69,21 @@ class TestMain(mocker.MockerTestCase):
     self._replay_and_create_main()
   def _expect_task_creation(self, id='task_0', left =82, top=42, width=316):
     expect(self.mg.preventDefault())
-    expect(self.mg.data[ANY]).result('#CCFF66')
+    expect(self.mg.data[ANY]).result(TABCOLOR)
     expect(self.ma.deploy(ARGS))
-    expect(self.ma.get_color()).result('#CCFF66')
+    expect(self.ma.get_color()).result(TABCOLOR)
     expect(self.mg.div('', Class='task-note', draggable=True,
                        id=id, node='panel')).result(self.ma)
-    expect(self.mg.set_style(ANY, backgroundColor='#CCFF66',
+    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR,
                 height=64, left=left, position='absolute', top=top, width=width))
-    expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY, onmouseover=ANY))
+    expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
+                             , onmouseover=ANY, onclick = ANY))
   def test_create_task(self):
     "create task"
     self._expect_all_kanban()
     self._expect_task_creation()
     self._replay_and_create_main()
-    assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
+    assert TABCOLOR in self.app.head_bar.colors, self.app.head_bar.colors
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
     tasks = self.app.task_bar.panels[0].items
@@ -95,17 +97,17 @@ class TestMain(mocker.MockerTestCase):
     expect(self.mg.confirmation(ANY)).result(True)
     expect(self.mg.remove(ANY, 'panel'))
     self._replay_and_create_main()
-    assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
+    assert TABCOLOR in self.app.head_bar.colors, self.app.head_bar.colors
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
-    self.app.head_bar.colors['#CCFF66']._drop(self.mg)
+    self.app.head_bar.colors[TABCOLOR]._drop(self.mg)
     tasks = self.app.task_bar.panels[0].items
     assert not tasks,tasks
   def _expect_task_move(self, task = 'task_0',left =402, top=42, width=256):
     "move atask"
     expect(self.mg.preventDefault())
     expect(self.mg.data[ANY]).result(task)
-    expect(self.mg.set_style(ANY, backgroundColor='#CCFF66', height=64
+    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=64
       , left=left, position='absolute', top=top, width=width))
   def test_create_task_and_move(self):
     "create task and move"
@@ -113,7 +115,7 @@ class TestMain(mocker.MockerTestCase):
     self._expect_task_creation()
     self._expect_task_move()#(task = 'task_',left =402, top=42, width=256)
     self._replay_and_create_main()
-    assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
+    assert TABCOLOR in self.app.head_bar.colors, self.app.head_bar.colors
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
     assert 'task_0' in self.app.items, self.app.items
@@ -128,7 +130,7 @@ class TestMain(mocker.MockerTestCase):
     self._expect_task_creation(id= 'task_1', left =402, top=42, width=256)
     self._expect_task_move(top=110)#(task = 'task_',left =402, top=42, width=256)
     self._replay_and_create_main()
-    assert '#CCFF66' in self.app.head_bar.colors, self.app.head_bar.colors
+    assert TABCOLOR in self.app.head_bar.colors, self.app.head_bar.colors
     #tab = self.app.head_bar.colors[0]
     self.app.task_bar.panels[0]._drop(self.mg)
     assert 'task_0' in self.app.items, self.app.items

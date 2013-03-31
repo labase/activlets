@@ -33,6 +33,11 @@ else:
 
 COLORS = """#CCFF66 #669933 #CCFFCC #99CC33 #CC6699 #993366 #FFCCCC #CC3399
 #FFCC66 #996633 #FFCCCC #CC9933 #6666CC #336699 #CCCCFF #3366CC""".split()
+COLORS = ['#F9D1D1', '#F9D9D1', '#F9E2D1', '#F9EAD1', '#F9F3D1', '#F8F9D1',
+          '#EFF9D1', '#E7F9D1', '#DEF9D1', '#D6F9D1', '#D1F9D4', '#D1F9DD',
+          '#D1F9E5', '#D1F9EE', '#D1F9F6', '#D1F4F9', '#D1ECF9', '#D1E3F9',
+          '#D1DBF9', '#D1D2F9', '#D7D1F9', '#E0D1F9', '#E8D1F9', '#F1D1F9']
+
 BACKGROUNDS ="#666666 #999999 #CCCCCC #EEEEEE".split()
 PANELS = len(BACKGROUNDS)
 HEAD, LABELS, PANEL, ITEM = 'head labels panel item'.split()
@@ -90,18 +95,24 @@ class Composite(Draggable):
     def get_dimensions(self):
         """get dimensions for component."""
         pass
-    def arrange(self, left, top, width, height, margin = 4, offy = 40):#, **kwargs):
+    def arrange(self, left, top, width, height, margin = 4, offy = 40, 
+                overflowY = {}):
         """Deploy this component in a container"""
         dims = {'position':'absolute',
             'left':left + margin/2, 'top':top, # * height + offy,
             'width':width - margin, 'height':height - margin,
             'backgroundColor':self.color}
+        if overflowY:
+            dims['overflowY'] = overflowY
         self.gui.set_style(self.avatar, **dims)
     def _build_avatar(self,gui, obid, color, node, clazz, drag, events):
         self.avatar = self.gui.div('', node = node, draggable= drag
                     , id=obid,   Class=clazz)
         dims = self.get_dimensions()
-        self.arrange(dims['left'],dims['top'],dims['width'],dims['height'], dims['margin'])
+        ov = 'overflowY' in dims and  dims['overflowY'] or None
+        self.arrange(dims['left'],dims['top'],dims['width'],dims['height']
+        , dims['margin'], ov)
+        #self.arrange(**dims)
         gui.set_attrs(self.avatar, **events)
     def append(self, component):
         """Append a new component."""
@@ -140,13 +151,17 @@ class Task(Composite):
         container.register(self)
         OBID += 1
         events = dict(ondragover = self._drag_over, ondrop = self._drop,
-            ondragstart = self._drag_start,onmouseover = self._mouse_over)
+            ondragstart = self._drag_start,onmouseover = self._mouse_over,
+            onclick = self._mouse_click)
         self._build_avatar(gui, self.ob_id, color, PANEL, "task-note", True, events)
     def get_dimensions(self):
         """get dimensions for component."""
         dims = dict(left = self.left, top = 42 + self.top*68,
                 width = self.width, height = 68, margin=4)
         return dims
+    def _mouse_click(self, ev):
+        logger('click')
+        self.avatar.text = prompt('New text',self.avatar.text)
 
 class Task_panel:
     """ A panel representing several steps of the task flow. :ref:`Task_panel`
@@ -165,16 +180,16 @@ class Task_panel:
 class Color_tab(Draggable):
     """ A color markers for new tasks. :ref:`Color_tab`
     """
-    def __init__(self,gui, color, left, top, container):
+    def __init__(self,gui, color, left, top, width, height, container):
         self.gui, self.color, self.ob_id, self.container = gui, color, color, container
-        #self.tab = self._build_tab(color, left, top, 16)
+        self.tab = self._build_tab(gui, color, left, top, width, height)
         container.register(self)
         #logger('Color_tab init top %s color %s  tab %s'%(top,color, self))
-    def _build_tab(self,gui, color, left, top, width):
+    def _build_tab(self,gui, color, left, top, width, height):
         avatar = gui.div('', node= HEAD, draggable=True,
                     id=color, Class="color-tabs")
         args = {'position':'absolute','left':left,
-            'top':top, 'width':width, 'height':40, 'backgroundColor':color}
+            'top':top, 'width':width, 'height':height, 'backgroundColor':color}
         gui.set_style(avatar, **args)
         gui.set_attrs(avatar,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
@@ -211,13 +226,14 @@ class Color_pallete:
         self.colors = colors
     def _build_color(self,i, color, container):
         # create a DIV for each color label
-        left = 0
-        top = 42*i #(i//15)
+        left = 80 +36*i
+        top = 470 #(i//15)
+        width, height = 36, 16
         gui = self.gui
-        color_tab = Color_tab(gui, color, left , top, container)
-        BRYTHON and color_tab.__init__(gui, color, left , top, container)
+        color_tab = Color_tab(gui, color, left , top, width, height, container)
+        BRYTHON and color_tab.__init__(gui, color, left , top, width, height, container)
         #logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
-        color_tab._build_tab(self.gui,color, left, top, 16)
+        #color_tab._build_tab(self.gui,color, left, top, 16)
         return color_tab #(color, color_tab)
         
 
@@ -234,7 +250,7 @@ class Step_board(Composite):
     def get_dimensions(self):
         """get dimensions for component."""
         dims = dict(left = self.left, top = 40,
-                width = self.width, height = 500, margin=0)
+                width = self.width, height = 420, margin=0, overflowY= 'scroll')
         return dims
     def get_item(self, item):
         """Get a tab with the given object id key"""
