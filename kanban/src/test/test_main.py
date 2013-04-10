@@ -54,10 +54,12 @@ class TestMain(mocker.MockerTestCase):
     # create panels
     expect(self.mg.div('', KWARGS, Class='task-panel', 
                        node='panel')).result(self.ma).count(1,4)
+    expect(self.mg.div('', KWARGS, Class='board-panel', 
+                       node='panel')).result(self.ma).count(1,2)
     expect(self.mg.set_style(ANY, KWARGS, top = 40, height= 420, 
-      position='absolute')).count(1,4)
+      position='absolute')).count(1,5)
     expect(self.mg.set_attrs(ANY, 
-            ondragover = ANY, ondrop = ANY)).count(1,4)
+            ondragover = ANY, ondrop = ANY)).count(1,5)
   def _replay_and_create_main(self,p = '.&.'):
     "create main"
     self.mock_gui.replay()
@@ -73,11 +75,12 @@ class TestMain(mocker.MockerTestCase):
     expect(self.ma.deploy(ARGS))
     expect(self.ma.get_color()).result(TABCOLOR)
     expect(self.mg.div('', Class='task-note', draggable=True,
-                       id=id, node='panel')).result(self.ma)
+                       id=id, node=ANY)).result(self.ma)
     expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR,
-                height=64, left=left, position='absolute', top=top, width=width))
+                height=64, left=ANY, position='absolute', top=ANY, width=width))
     expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
                              , onmouseover=ANY, onclick = ANY))
+    #expect(self.mg.cling(ARGS))
   def test_create_task(self):
     "create task"
     self._expect_all_kanban()
@@ -107,8 +110,14 @@ class TestMain(mocker.MockerTestCase):
     "move atask"
     expect(self.mg.preventDefault())
     expect(self.mg.data[ANY]).result(task)
-    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=64
-      , left=left, position='absolute', top=top, width=width))
+    #expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=64
+    #  , left=left, position='absolute', top=top, width=width))
+    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=ANY
+      , left=ANY, position='absolute', top=ANY, width=ANY))
+    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=ANY
+      , left=ANY, position='absolute', top=ANY, width=ANY))
+    expect(self.mg.cling(ARGS))
+    expect(self.mg.remove(ARGS))
   def test_create_task_and_move(self):
     "create task and move"
     self._expect_all_kanban()

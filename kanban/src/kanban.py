@@ -25,7 +25,7 @@ if not '__package__' in dir():
     import svg
     import html
     logger = log
-    BRYTHON = True
+    BRYTHON = False
     pass
 else:
     logger = _logger
@@ -48,14 +48,21 @@ class GUI:
     def __init__(self, doc, gui):
         self.doc, self.gui = doc, gui
         pass
-    def div(self, text, node, draggable=False, id='nono', Class="rounded-corners"):
+    def div(self, text, node, draggable=False, id='nono', Class="rounded-corners", nodename= None):
         """Create a HTML DIV element"""
         element = self.gui.DIV(text, draggable=draggable, id=id, Class=Class)
-        self.doc[node] <= element
+        thenode = nodename and self.doc[nodename] or node
+        if isinstance(node, str):
+            self.doc[node] <= element
+        else:
+            node  <= element
         return element
-    def remove(self, element, node):
+    def cling(self,level, element):
+        """Cling a element to a DOM node"""
+        level <= element
+    def remove(self, node, element):
         """Remove a element from a DOM node"""
-        self.doc[node].removeChild(element)
+        node.removeChild(element)
     def confirmation(self, query_text):
         """Open a confimation dialog and return the choice"""
         return confirm(query_text)
@@ -124,10 +131,14 @@ class Composite(Draggable):
     def attach(self, container, dims):
         """attach to a new container."""
         self.container.remove(self)
+        print (self.container.avatar,self.avatar)
+        self.gui.remove(self.container.avatar,self.avatar)
         self.container = container
         self.top, self.width = dims['top'],dims['width']
         self.arrange(dims['left'],self.top*68+42,self.width,dims['height'], dims['margin'])
+        self.arrange(0,self.top*68,self.width,dims['height'], dims['margin'])
         container.append(self)
+        self.gui.cling(container.avatar,self.avatar)
     def _rearrange_components(self, component):
         """dettach from this container and sort components."""
         pass
@@ -141,7 +152,7 @@ class Task(Composite):
         """Delete this item from Board and Dom"""
         if self.gui.confirmation('Deseja realmente apagar %s?'% self.ob_id):
             self.container.remove(self)
-            logger('delete %s'%self.ob_id)
+            logger('delete_object %s'%self.ob_id)
             self.gui.remove(self, PANEL)
     def __init__(self, gui, container, color, left, top, width):
         global OBID
@@ -153,10 +164,12 @@ class Task(Composite):
         events = dict(ondragover = self._drag_over, ondrop = self._drop,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             onclick = self._mouse_click)
-        self._build_avatar(gui, self.ob_id, color, PANEL, "task-note", True, events)
+        self._build_avatar(gui, self.ob_id, color, container.avatar, "task-note", True, events)
     def get_dimensions(self):
         """get dimensions for component."""
-        dims = dict(left = self.left, top = 42 + self.top*68,
+        #dims = dict(left = self.left, top = 42 + self.top*68,
+        #        width = self.width, height = 68, margin=4)
+        dims = dict(left = 0, top = 2 + self.top*68,
                 width = self.width, height = 68, margin=4)
         return dims
     def _mouse_click(self, ev):
@@ -204,11 +217,38 @@ class Color_tab(Draggable):
         task = Task(self.gui, container, self.color, left, top, width)
         BRYTHON and task.__init__(self.gui, container, self.color, left, top, width)
         container.append(task)
-    def delete(self, ev):
+    def new_proj(self, container, dims):
+        """Deploy a new project in a projectboard"""
+        print('_pr_dropnew_proj')
+        left, top, width = dims['left'],dims['top'],dims['width']
+        proj = Project(self.gui, self.color, left , top, width, 64, container)
+        #proj.__init__(self.gui, self.color, left , top, width, 64, container)
+        container.append(proj)
+    def delete_object(self, ev):
         pass
     def do_drop(self,item):
-        logger(' delete item %s id %s del %s'%(item, item.ob_id,dir(item)))
+        logger(' delete_object item %s id %s del %s'%(item, item.ob_id,dir(item)))
         item.delete_object()
+
+class Project(Color_tab):
+    """ A Project selector for new tasks. :ref:`Color_tab`
+    """
+    def __init__(self,gui, color, left, top, width, height, container):
+        self.gui, self.color, self.ob_id, self.container = gui, color, color, container
+        self.avatar = self._build_tab(gui, color, left, top, width, height)
+        print('_pr_dropnew_projProject')
+        container.register(self)
+        logger('Project init top %s color %s  tab %s'%(top,color, self))
+    def _build_tab(self,gui, color, left, top, width, height):
+        avatar = gui.div('', node= self.container.avatar, draggable=True,
+                    id='Proj-%s'%color, Class="Project-tab")
+        args = {'position':'absolute','left':left,
+            'top':top, 'width':width, 'height':height, 'backgroundColor':color}
+        gui.set_style(avatar, **args)
+        gui.set_attrs(avatar,
+            ondragstart = self._drag_start,onmouseover = self._mouse_over,
+            ondragover = self._drag_over, ondrop = self._drop)
+        return avatar
 
 class Color_pallete:
     """ A collecion of color markers for new tasks. :ref:`Color_pallete`
@@ -245,7 +285,10 @@ class Step_board(Composite):
         self.gui, self.left, self.width, self.container = gui, left, width, panel
         self.color = color
         self.items = []
+        if i >= 100:
+            return
         events = dict(ondragover = self._drag_over, ondrop = self._drop)
+        print('Step_board build_avatar %s'%left)
         self._build_avatar(gui, 'panel%d'%i, color, PANEL, "task-panel", False, events)
     def get_dimensions(self):
         """get dimensions for component."""
@@ -278,6 +321,24 @@ class Step_board(Composite):
         item.attach(self,self._next_position())
     pass
 
+class Project_board(Step_board):
+    """ A board to hold tasks within a step in the task workflow. :ref:`Step_board`
+    """
+    def __init__(self, gui, i, color, left, width, panel):
+        self.gui, self.left, self.width, self.container = gui, left, width, panel
+        self.color = color
+        self.items = []
+        events = dict(ondragover = self._drag_over, ondrop = self._pr_drop)
+        print('Project_board build_avatar %s'%panel)
+        self._build_avatar(gui, 'board%d'%i, color, PANEL, "board-panel", False, events)
+    def _pr_drop(self,ev):
+        ev.preventDefault()
+        item_id = ev.data[ITEM]
+        item = self.container.get_item(item_id)
+        #self.do_drop(item)
+        print('_pr_drop')
+        item.new_proj(self,self._next_position())
+
 class Dust_bin:
     """ A Kanban workflow plugin for the Activ platform. :ref:`Dust_bin`
     """
@@ -301,7 +362,7 @@ class Kanban:
     def _build_project_selector(self):
         return Color_pallete(self.gui, self)
     def _build_label_selector(self):
-        pass
+        return Project_board(self.gui, 100, '#EFEFEF', 0, 70, self)
     def _build_workflow_area(self):
         return Task_panel(self.gui, self)
         pass

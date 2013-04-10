@@ -20,8 +20,9 @@ from fabric.api import local, settings, cd, run, lcd
 from base64 import b64decode as b6d
 import mechanize as mcz
 from tempfile import mkdtemp
-KG_ORIGIN = '/home/carlo/Dropbox/Android/git/activlets/kanban'
+KG_ORIGIN = './'
 KG_DEST = '/home/carlo/Dropbox/Public/labase/kwarwp'
+PG_DEST = '/home/carlo/Público/file/activlets'
 SOURCES = '*.py'
 KSOURCES = 'kuarup.py tchuk.py kuarupfest.py tkinter_factory.py'
 KG_IMAGES = KG_ORIGIN + '/src/public/image'
@@ -57,7 +58,7 @@ def __actdep(paswd):
     for filename in WEBFILES:
         __actup(mech, filename)
 def actdep(paswd="bGFiYXNlNGN0MXY="):
-    ktest()
+    #ktest()
     kdoc()
     __actdep(paswd)
 def ktest():
@@ -69,12 +70,15 @@ def _do_copy(source,targ):
     local ("mkdir -p %s"%targ)
     local("cp -u %s -t %s"%(source,targ))
 
-def _k_copy():
-    for part, dest in zip(PARTS, DESTS):
-        targ, source = KG_DEST + dest, KG_ORIGIN +part
+def _k_copy(root_dest = KG_DEST ,tail_dest = DESTS):
+    for part, dest in zip(PARTS, tail_dest):
+        targ, source = root_dest + dest, KG_ORIGIN +part
         _do_copy(source, targ)
 
 def kgdep():
     ktest()
     _k_copy()
+def pgdep():
+    ktest()
+    _k_copy(PG_DEST,'/')
     #kzip()
