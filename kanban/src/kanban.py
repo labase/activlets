@@ -104,12 +104,12 @@ class Composite(Draggable):
         """get dimensions for component."""
         pass
     def arrange(self, left, top, width, height, margin = 4, offy = 40, 
-                overflowY = {}):
+                overflowY = {}, opacity = 0.7 ):
         """Deploy this component in a container"""
         dims = {'position':'absolute',
             'left':left + margin/2, 'top':top, # * height + offy,
             'width':width - margin, 'height':height - margin,
-            'backgroundColor':self.color, 'opacity':0.7}
+            'backgroundColor':self.color, 'opacity':opacity}
         if overflowY:
             dims['overflowY'] = overflowY
         self.gui.set_style(self.avatar, **dims)
@@ -119,7 +119,7 @@ class Composite(Draggable):
         dims = self.get_dimensions()
         ov = 'overflowY' in dims and  dims['overflowY'] or None
         self.arrange(dims['left'],dims['top'],dims['width'],dims['height']
-        , dims['margin'], ov)
+        , dims['margin'], ov, dims['opacity'])
         #self.arrange(**dims)
         gui.set_attrs(self.avatar, **events)
     def append(self, component):
@@ -144,8 +144,37 @@ class Composite(Draggable):
         """dettach from this container and sort components."""
         pass
 
-OBID = 0
+OBID = TMID = 0
 
+class Timer(Composite):
+    """ A Clock to set and account task time. :ref:`Task`
+    """
+    def delete_object(self):
+        """Delete this item from Board and Dom"""
+        self.container.remove(self)
+        logger('delete_object %s'%self.ob_id)
+        self.gui.remove(self, self.container.avatar)
+    def __init__(self, gui, container, color, left, top, width):
+        global TMID
+        self.gui, self.container, self.color = gui, container, 'black'
+        self.ob_id, self.top, self.width = 'clock_%d'%TMID, top, 64
+        self.left = left
+        #container.register(self)
+        TMID += 1
+        events = dict(ondragover = self._drag_over, ondrop = self._drop,
+            ondragstart = self._drag_start,onmouseover = self._mouse_over,
+            onclick = self._mouse_click)
+        self._build_avatar(gui, self.ob_id, color, container.avatar, "task-timer", False, events)
+    def get_dimensions(self):
+        """get dimensions for component."""
+        #dims = dict(left = self.left, top = 42 + self.top*68,
+        #        width = self.width, height = 68, margin=4)
+        dims = dict(left = 0, top = 0,
+                width = self.width, height = 16, margin=0, opacity=0.7)
+        return dims
+    def _mouse_click(self, ev):
+        logger('click')
+        self.avatar.text = prompt('New text',self.avatar.text)
 class Task(Composite):
     """ A Task represented by a colored note. :ref:`Task`
     """
@@ -165,13 +194,15 @@ class Task(Composite):
         events = dict(ondragover = self._drag_over, ondrop = self._drop,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             onclick = self._mouse_click)
-        self._build_avatar(gui, self.ob_id, color, container.avatar, "task-note", True, events)
+        self._build_avatar(gui, self.ob_id, color, container.avatar,
+                           "task-note", True, events)
+        self.timer = Timer(gui,self,'black', left, top-16, width)
     def get_dimensions(self):
         """get dimensions for component."""
         #dims = dict(left = self.left, top = 42 + self.top*68,
         #        width = self.width, height = 68, margin=4)
         dims = dict(left = 0, top = 2 + self.top*68,
-                width = self.width, height = 68, margin=4)
+                width = self.width, height = 68, margin=4, opacity=0.8)
         return dims
     def _mouse_click(self, ev):
         logger('click')
@@ -295,7 +326,7 @@ class Step_board(Composite):
         self._build_avatar(gui, 'panel%d'%i, color, PANEL, "task-panel", False, events)
     def get_dimensions(self):
         """get dimensions for component."""
-        dims = dict(left = self.left, top = 40,
+        dims = dict(left = self.left, top = 40, opacity=0.6,
                 width = self.width, height = 420, margin=0, overflowY= 'scroll')
         return dims
     def get_item(self, item):
@@ -334,6 +365,11 @@ class Project_board(Step_board):
         events = dict(ondragover = self._drag_over, ondrop = self._pr_drop)
         print('Project_board build_avatar %s'%panel)
         self._build_avatar(gui, 'board%d'%i, color, PANEL, "board-panel", False, events)
+    def get_dimensions(self):
+        """get dimensions for component."""
+        dims = dict(left = self.left, top = 40, opacity=0.3,
+                width = self.width, height = 420, margin=0, overflowY= 'scroll')
+        return dims
     def _pr_drop(self,ev):
         ev.preventDefault()
         item_id = ev.data[ITEM]

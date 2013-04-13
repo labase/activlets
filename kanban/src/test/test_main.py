@@ -80,7 +80,15 @@ class TestMain(mocker.MockerTestCase):
                 height=64, left=ANY, position='absolute', top=ANY, width=width))
     expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
                              , onmouseover=ANY, onclick = ANY))
-    #expect(self.mg.cling(ARGS))
+    #: timer creation
+    expect(self.mg.div('', KWARGS,Class='task-timer', draggable=False,
+                        node=ANY)).result(self.ma)
+    expect(self.mg.set_style(ANY, KWARGS,backgroundColor='black',
+                height=16, left=ANY, position='absolute', top=ANY, width=64))
+    
+    expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
+                             , onmouseover=ANY, onclick = ANY))
+   #expect(self.mg.cling(ARGS))
   def test_create_task(self):
     "create task"
     self._expect_all_kanban()
