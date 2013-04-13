@@ -7,7 +7,7 @@ Kanban - Agile Workflow
 :Contact: carlo@nce.ufrj.br
 :Date: 2013/03/29
 :Status: This is a "work in progress"
-:Revision: 0.1.8
+:Revision: 0.1.9
 :Home: `Labase <http://labase.selfip.org/>`__
 :Copyright: 2013, `GPL <http://is.gd/3Udt>`__. 
 """
@@ -70,6 +70,7 @@ class GUI:
         """Set the style attribute of a DOM element"""
         #logger('styyle %s'%kwargs)
         target.style= kwargs
+        #setattr( target, 'style', kwargs)
     def set_attrs(self, target, **kwargs):
         """Set the attributes defined as key arguments of a target DOM element"""
         for attr, value in kwargs.items():
@@ -108,7 +109,7 @@ class Composite(Draggable):
         dims = {'position':'absolute',
             'left':left + margin/2, 'top':top, # * height + offy,
             'width':width - margin, 'height':height - margin,
-            'backgroundColor':self.color}
+            'backgroundColor':self.color, 'opacity':0.7}
         if overflowY:
             dims['overflowY'] = overflowY
         self.gui.set_style(self.avatar, **dims)
@@ -136,7 +137,7 @@ class Composite(Draggable):
         self.container = container
         self.top, self.width = dims['top'],dims['width']
         self.arrange(dims['left'],self.top*68+42,self.width,dims['height'], dims['margin'])
-        self.arrange(0,self.top*68,self.width,dims['height'], dims['margin'])
+        self.arrange(0,2+self.top*68,self.width,dims['height'], dims['margin'])
         container.append(self)
         self.gui.cling(container.avatar,self.avatar)
     def _rearrange_components(self, component):
@@ -194,6 +195,8 @@ class Color_tab(Draggable):
     """ A color markers for new tasks. :ref:`Color_tab`
     """
     def __init__(self,gui, color, left, top, width, height, container):
+        if left < 50: #: TODO remove Brython fix
+            return
         self.gui, self.color, self.ob_id, self.container = gui, color, color, container
         self.tab = self._build_tab(gui, color, left, top, width, height)
         container.register(self)
@@ -238,16 +241,16 @@ class Project(Color_tab):
         self.avatar = self._build_tab(gui, color, left, top, width, height)
         print('_pr_dropnew_projProject')
         container.register(self)
-        logger('Project init top %s color %s  tab %s'%(top,color, self))
     def _build_tab(self,gui, color, left, top, width, height):
         avatar = gui.div('', node= self.container.avatar, draggable=True,
                     id='Proj-%s'%color, Class="Project-tab")
-        args = {'position':'absolute','left':left,
-            'top':top, 'width':width, 'height':height, 'backgroundColor':color}
+        args = {'position':'absolute','left':left,'top':top*68, 'width':width,
+             'height':height, 'backgroundColor':color}
         gui.set_style(avatar, **args)
         gui.set_attrs(avatar,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             ondragover = self._drag_over, ondrop = self._drop)
+        logger('Project init top %s color %s  tab %s'%(top,color, self))
         return avatar
 
 class Color_pallete:
@@ -336,7 +339,7 @@ class Project_board(Step_board):
         item_id = ev.data[ITEM]
         item = self.container.get_item(item_id)
         #self.do_drop(item)
-        print('_pr_drop')
+        print('_pr_drop items: %s'%self.items)
         item.new_proj(self,self._next_position())
 
 class Dust_bin:

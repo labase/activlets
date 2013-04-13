@@ -76,7 +76,7 @@ class TestMain(mocker.MockerTestCase):
     expect(self.ma.get_color()).result(TABCOLOR)
     expect(self.mg.div('', Class='task-note', draggable=True,
                        id=id, node=ANY)).result(self.ma)
-    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR,
+    expect(self.mg.set_style(ANY, KWARGS,backgroundColor=TABCOLOR,
                 height=64, left=ANY, position='absolute', top=ANY, width=width))
     expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
                              , onmouseover=ANY, onclick = ANY))
@@ -112,9 +112,9 @@ class TestMain(mocker.MockerTestCase):
     expect(self.mg.data[ANY]).result(task)
     #expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=64
     #  , left=left, position='absolute', top=top, width=width))
-    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=ANY
+    expect(self.mg.set_style(ANY, KWARGS,backgroundColor=TABCOLOR, height=ANY
       , left=ANY, position='absolute', top=ANY, width=ANY))
-    expect(self.mg.set_style(ANY, backgroundColor=TABCOLOR, height=ANY
+    expect(self.mg.set_style(ANY, KWARGS,backgroundColor=TABCOLOR, height=ANY
       , left=ANY, position='absolute', top=ANY, width=ANY))
     expect(self.mg.cling(ARGS))
     expect(self.mg.remove(ARGS))

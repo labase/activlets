@@ -35,8 +35,8 @@ __date__    = "2013/03/29"
     font-size:12px;
 }
 </style>
-<script type="text/javascript" src="/file/memit/brython.js"></script>
-<script type="text/python" src="/file/activlets/kanban.py">
+<script type="text/javascript" src="../lib/brython.js"></script>
+<script type="text/python" src="kanban.py">
 </script>
 <script type="text/python">
 import html
@@ -44,7 +44,7 @@ main(doc, GUI(doc, html), 'head labels panel', '/studio/activlets/%s')
 </script>
 
 </head>
-<body onLoad="brython(1)">
+<body  style="background-image:url(http://j.mp/118IKZe);background-repeat:repeat-y;" onLoad="brython(1)">
 <div id="main">
     <div id="head"></div>
     <div id="labels"></div>
