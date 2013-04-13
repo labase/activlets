@@ -49,8 +49,8 @@ class TestMain(mocker.MockerTestCase):
                        node='head')).result(self.ma).count(1,24)
     expect(self.mg.set_style(ANY, KWARGS, height= 16, width= 36,
       position='absolute')).count(1,24)
-    expect(self.mg.set_attrs(ANY, ondragstart = ANY,onmouseover = ANY,
-            ondragover = ANY, ondrop = ANY)).count(1,24)
+    expect(self.mg.set_attrs(ANY)).count(1,6)
+    expect(self.mg.set_attrs(ANY, KWARGS)).count(1,24)
     # create panels
     expect(self.mg.div('', KWARGS, Class='task-panel', 
                        node='panel')).result(self.ma).count(1,4)
@@ -74,7 +74,7 @@ class TestMain(mocker.MockerTestCase):
     expect(self.mg.data[ANY]).result(TABCOLOR)
     expect(self.ma.deploy(ARGS))
     expect(self.ma.get_color()).result(TABCOLOR)
-    expect(self.mg.div('', Class='task-note', draggable=True,
+    expect(self.mg.div('', Class='task-div', draggable=True,
                        id=id, node=ANY)).result(self.ma)
     expect(self.mg.set_style(ANY, KWARGS,backgroundColor=TABCOLOR,
                 height=64, left=ANY, position='absolute', top=ANY, width=width))
@@ -85,6 +85,14 @@ class TestMain(mocker.MockerTestCase):
                         node=ANY)).result(self.ma)
     expect(self.mg.set_style(ANY, KWARGS,backgroundColor='black',
                 height=16, left=ANY, position='absolute', top=ANY, width=64))
+    
+    expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
+                             , onmouseover=ANY, onclick = ANY))
+    #: timernote creation
+    expect(self.mg.div('', KWARGS,Class='task-note', draggable=True,
+                        node=ANY)).result(self.ma)
+    expect(self.mg.set_style(ANY, KWARGS,backgroundColor=TABCOLOR,
+                height=46, left=ANY, position='absolute', top=ANY, width='96%'))
     
     expect(self.mg.set_attrs(ANY, ondragover=ANY, ondragstart=ANY, ondrop=ANY
                              , onmouseover=ANY, onclick = ANY))

@@ -33,18 +33,22 @@ def __actinit(mech,paswd):
     mech["user"] = "carlo"
     mech["passwd"] = b6d(paswd)
     results = mech.submit().read()
-def __actup(mech, filename, folder = 'file/%activlets', orig = '/src/', single = None):
+def __actup(mech, filename, folder = 'file/%sactivlets', orig = '/src/', single = None):
     avs = mech.open(PLAT+folder%'').read()
     if filename in avs:
         mech.open(PLAT+folder%'delete/'+ '/' + filename).read()
+    print(PLAT+folder%'')
     avs = mech.open(PLAT+folder%'').read()
     mech.select_form(nr=0)
     mech.add_file(open(KG_ORIGIN + orig + (single or filename)), 'text/plain', filename)
     results = mech.submit().read()
 def actdep(paswd):
     mech = mcz.Browser()
+    paswd = paswd.replace('_','=')
     __actinit(mech,paswd)
-    files = local('ls src', capture=True)
+    files = [f for f in local('ls src', capture=True).split()
+             if f.split('.')[-1] in 'pyhtml']
+    local('echo %s'%files)
     for filename in files:
         __actup(mech, filename)
 def ktest():

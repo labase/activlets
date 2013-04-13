@@ -39,6 +39,8 @@ COLORS = ['#F9D1D1', '#F9D9D1', '#F9E2D1', '#F9EAD1', '#F9F3D1', '#F8F9D1',
           '#D1DBF9', '#D1D2F9', '#D7D1F9', '#E0D1F9', '#E8D1F9', '#F1D1F9']
 
 BACKGROUNDS ="#666666 #999999 #CCCCCC #EEEEEE".split()
+BACKGROUNDS =["rgba(%d,%d,%d,0.4)"%(color,color,color) for color in [102,153,204,238]]
+
 PANELS = len(BACKGROUNDS)
 HEAD, LABELS, PANEL, ITEM = 'head labels panel item'.split()
 
@@ -103,11 +105,11 @@ class Composite(Draggable):
     def get_dimensions(self):
         """get dimensions for component."""
         pass
-    def arrange(self, left, top, width, height, margin = 4, offy = 40, 
-                overflowY = {}, opacity = 0.7 ):
+    def arrange(self, left=0, top=0, width=0, height=0, margin = 4, offy = 40, 
+                overflowY = 'hidden', overflowX = 'hidden', opacity = 0.7 ):
         """Deploy this component in a container"""
-        dims = {'position':'absolute',
-            'left':left + margin/2, 'top':top, # * height + offy,
+        dims = {'position':'absolute', 'overflowX':'hidden',
+            'left':left + margin/2, 'top':top, # * height + offy
             'width':width - margin, 'height':height - margin,
             'backgroundColor':self.color, 'opacity':opacity}
         if overflowY:
@@ -117,10 +119,7 @@ class Composite(Draggable):
         self.avatar = self.gui.div('', node = node, draggable= drag
                     , id=obid,   Class=clazz)
         dims = self.get_dimensions()
-        ov = 'overflowY' in dims and  dims['overflowY'] or None
-        self.arrange(dims['left'],dims['top'],dims['width'],dims['height']
-        , dims['margin'], ov, dims['opacity'])
-        #self.arrange(**dims)
+        self.arrange(**dims)
         gui.set_attrs(self.avatar, **events)
     def append(self, component):
         """Append a new component."""
@@ -188,25 +187,40 @@ class Task(Composite):
         global OBID
         self.gui, self.container, self.color = gui, container, color
         self.ob_id, self.top, self.width = 'task_%d'%OBID, top, width
-        self.left = left
+        self.left, self.offy, self.height, self.stepy = left, 2, 68, 68
         container.register(self)
         OBID += 1
+        self._build_avatar(gui, self.ob_id, color, container.avatar,
+                           "task-div", True, {})
+        self.task = self.avatar
+        
+        self.timer = Timer(gui,self,'black', left, top-16, width)
+        self.offy, self.height, self.width, self.stepy =  18, '100%', '100%', 0
         events = dict(ondragover = self._drag_over, ondrop = self._drop,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
             onclick = self._mouse_click)
-        self._build_avatar(gui, self.ob_id, color, container.avatar,
+        self._build_note(gui, 'note-'+self.ob_id, color, self.task,
                            "task-note", True, events)
-        self.timer = Timer(gui,self,'black', left, top-16, width)
+        #self.avatar, self.note = self.task , self.avatar
+    def _build_note(self,gui, obid, color, node, clazz, drag, events):
+        self.note = self.gui.div('', node = node, draggable= drag
+                    , id=obid,   Class=clazz)
+        dims = {'position':'absolute', 'overflow':'hidden',
+            'left':2, 'top':self.offy, # * height + offy
+            'width':'96%', 'height':46,
+            'backgroundColor':self.color, 'opacity':0.9}
+        self.gui.set_style(self.note, **dims)
+        gui.set_attrs(self.note, **events)
     def get_dimensions(self):
         """get dimensions for component."""
         #dims = dict(left = self.left, top = 42 + self.top*68,
         #        width = self.width, height = 68, margin=4)
-        dims = dict(left = 0, top = 2 + self.top*68,
-                width = self.width, height = 68, margin=4, opacity=0.8)
+        dims = dict(left = 0, top = self.offy + self.top*self.stepy,
+                width = self.width, height = self.height, margin=4, opacity=0.8)
         return dims
     def _mouse_click(self, ev):
         logger('click')
-        self.avatar.text = prompt('New text',self.avatar.text)
+        self.note.text = prompt('New text',self.avatar.text)
 
 class Task_panel:
     """ A panel representing several steps of the task flow. :ref:`Task_panel`
@@ -276,7 +290,7 @@ class Project(Color_tab):
         avatar = gui.div('', node= self.container.avatar, draggable=True,
                     id='Proj-%s'%color, Class="Project-tab")
         args = {'position':'absolute','left':left,'top':top*68, 'width':width,
-             'height':height, 'backgroundColor':color}
+             'height':height, 'backgroundColor':color, 'opacity':0.9}
         gui.set_style(avatar, **args)
         gui.set_attrs(avatar,
             ondragstart = self._drag_start,onmouseover = self._mouse_over,
@@ -326,8 +340,8 @@ class Step_board(Composite):
         self._build_avatar(gui, 'panel%d'%i, color, PANEL, "task-panel", False, events)
     def get_dimensions(self):
         """get dimensions for component."""
-        dims = dict(left = self.left, top = 40, opacity=0.6,
-                width = self.width, height = 420, margin=0, overflowY= 'scroll')
+        dims = dict(left = self.left, top = 40, opacity=0.9,
+                width = self.width, height = 420, margin=0, overflowY= 'auto')
         return dims
     def get_item(self, item):
         """Get a tab with the given object id key"""
@@ -367,8 +381,8 @@ class Project_board(Step_board):
         self._build_avatar(gui, 'board%d'%i, color, PANEL, "board-panel", False, events)
     def get_dimensions(self):
         """get dimensions for component."""
-        dims = dict(left = self.left, top = 40, opacity=0.3,
-                width = self.width, height = 420, margin=0, overflowY= 'scroll')
+        dims = dict(left = self.left, top = 40, opacity=0.9,
+                width = self.width, height = 420, margin=0, overflowY= 'auto')
         return dims
     def _pr_drop(self,ev):
         ev.preventDefault()
@@ -401,7 +415,7 @@ class Kanban:
     def _build_project_selector(self):
         return Color_pallete(self.gui, self)
     def _build_label_selector(self):
-        return Project_board(self.gui, 100, '#EFEFEF', 0, 70, self)
+        return Project_board(self.gui, 100, 'rgba(255,255,255,0.1)', 0, 70, self)
     def _build_workflow_area(self):
         return Task_panel(self.gui, self)
         pass
