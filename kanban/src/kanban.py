@@ -5,11 +5,11 @@ Kanban - Agile Workflow
 
 :Author: *Carlo E. T. Oliveira*
 :Contact: carlo@nce.ufrj.br
-:Date: 2013/03/29
+:Date: 2013/06/19
 :Status: This is a "work in progress"
 :Revision: 0.1.9
 :Home: `Labase <http://labase.selfip.org/>`__
-:Copyright: 2013, `GPL <http://is.gd/3Udt>`__. 
+:Copyright: 2013, `GPL <http://is.gd/3Udt>`__.
 """
 __author__  = "Carlo E. T. Oliveira (carlo@nce.ufrj.br)"
 __version__ = "0.1"
@@ -20,7 +20,7 @@ BRYTHON = False
 
 def _logger(*a):
     print(a)
-        
+
 if not '__package__' in dir():
     import svg
     import html
@@ -105,7 +105,7 @@ class Composite(Draggable):
     def get_dimensions(self):
         """get dimensions for component."""
         pass
-    def arrange(self, left=0, top=0, width=0, height=0, margin = 4, offy = 40, 
+    def arrange(self, left=0, top=0, width=0, height=0, margin = 4, offy = 40,
                 overflowY = 'hidden', overflowX = 'hidden', opacity = 0.7 ):
         """Deploy this component in a container"""
         dims = {'position':'absolute', 'overflowX':'hidden',
@@ -193,7 +193,7 @@ class Task(Composite):
         self._build_avatar(gui, self.ob_id, color, container.avatar,
                            "task-div", True, {})
         self.task = self.avatar
-        
+
         self.timer = Timer(gui,self,'black', left, top-16, width)
         self.offy, self.height, self.width, self.stepy =  18, '100%', '100%', 0
         events = dict(ondragover = self._drag_over, ondrop = self._drop,
@@ -277,12 +277,14 @@ class Color_tab(Draggable):
     def do_drop(self,item):
         logger(' delete_object item %s id %s del %s'%(item, item.ob_id,dir(item)))
         item.delete_object()
+FIELDS = 'color origin value img size top ob_id'.split(',')
 
 class Project(Color_tab):
     """ A Project selector for new tasks. :ref:`Color_tab`
     """
-    def __init__(self,gui, color, left, top, width, height, container):
-        self.gui, self.color, self.ob_id, self.container = gui, color, color, container
+    def __init__(self, gui, color, left, top, width, height, container):
+        self.gui, self.color, self.ob_id, self.container = (
+            gui, color, color, container)
         self.avatar = self._build_tab(gui, color, left, top, width, height)
         print('_pr_dropnew_projProject')
         container.register(self)
@@ -297,6 +299,18 @@ class Project(Color_tab):
             ondragover = self._drag_over, ondrop = self._drop)
         logger('Project init top %s color %s  tab %s'%(top,color, self))
         return avatar
+    def memento(self):
+        d = dict(cls = self.__class__.__name__)
+        d.update (dict ((field[:3], getattr(self,field))
+            for field in FIELDS if hasattr(self,field) and getattr(self,field)))
+        return d
+    def factory(self, gui, col=0,ob_=0,ori=0,con=0,cls=0,ref=0, val=0, img=0,**kw):
+        self.gui, self.color, self.ob_id, self.container = (
+            gui, col, ob_, con)
+        self.avatar = self._build_tab(gui, color, left, top, width, height)
+        print('_pr_dropnew_projProject')
+        container.register(self)
+        return elemento
 
 class Color_pallete:
     """ A collecion of color markers for new tasks. :ref:`Color_pallete`
@@ -323,7 +337,7 @@ class Color_pallete:
         #logger('Color_pallete build top %s color %s  tab %s'%(top,color, color_tab))
         #color_tab._build_tab(self.gui,color, left, top, 16)
         return color_tab #(color, color_tab)
-        
+
 
 class Step_board(Composite):
     """ A board to hold tasks within a step in the task workflow. :ref:`Step_board`
@@ -425,7 +439,7 @@ class Kanban:
         self.head_bar = self._build_project_selector()
         self.label_bar = self._build_label_selector()
         self.task_bar = self._build_workflow_area()
-         
+
 def main(dc, gui, div_ids, repo):
     """ Starting point """
     global REPO
