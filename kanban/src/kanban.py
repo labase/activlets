@@ -19,21 +19,21 @@ class Kanban:
     """
     def __init__(self, gui):
         """Constroi as partes do Jogo. """
-        #self.monta_base(gui)
+        self.kanban = self.build_pending(gui)
+        self.kanban = self.build_running(gui)
         #self.monta_mao(gui)
         #self.monta_tabuleiro(gui)
 
-    def monta_base(self, gui):
+    def build_pending(self, gui):
         """Monta a casa que fica na base. """
-        self.base = gui.monta_base()
+        self.section = gui.build_section()
+        self.base = gui.build_task()
 
-    def monta_tabuleiro(self, gui):
-        """Monta o tabuleiro onde se joga as pecas. """
-        self.tabuleiro = Tabuleiro(gui)
-
-    def monta_mao(self, gui):
-        """Monta o espaco onde ficam as pecas no inicio. """
-        self.mao = Mao(gui)
+    def build_running(self, gui):
+        """Monta a casa que fica na base. """
+        self.section = gui.build_section()
+        self.base = gui.build_task()
+        self.base = gui.build_task()
 
 
 def main(doc,gui):

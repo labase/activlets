@@ -12,9 +12,7 @@ Kanban - Visual
 :Copyright: 2013, `GPL <http://is.gd/3Udt>`__.
 """
 texto = "Olá Carlo! Hoje houve um imprevisto que não me possibilitou ir a aula"+\
-" da pós que você me convidou. Tenho interesse de assistir a aula e conversar"+\
-"com a profa. Cristina. Pretendo aparecer na semana que vem Abraços!"
-
+" da pós que você me convidou. Tenho interesse de assistir a aula."
 class Visual:
     """Build visual parts.
     """
@@ -24,12 +22,27 @@ class Visual:
         self.gui = gui
         self.tasks = self.gui.DIV('',id="tasks")
         divmain <= self.tasks
-        task = self.gui.DIV(texto, style=dict(float="left", width="100%"))
+        self.tasks = self.gui.DIV('',id="tasks")
+        divmain <= self.tasks
+
+    def build_section(self, text = texto, title= "tarefa"):
+        """Build a section div for tasks. """
+        h = self.gui.H3()
+        span = self.gui.SPAN(title, style = dict(
+             textAlign = "left", color = "red"))
+        h <= span
+        self.tasks <= h
+        div_style = style=dict(border = "2px red solid", 
+            float = "left", width = "99%", padding = 5, fontSize = 10)
+        self.section = self.gui.DIV("", Class="rounded-corners", 
+                                    style = div_style)
+        self.tasks <= self.section
+        return self.section
+    def build_task(self, text = texto, sect = None):
+        """Build a task div. """
+        sect = sect or self.section
+        task = self.gui.DIV(text, style=dict(float="left", width="100%"))
         hr = self.gui.HR(noshade="")
-        self.tasks <= task
+        sect <= task
         task <= hr
         print ("aqui")
-
-    def buid_base(self, gui):
-        """Monta a casa que fica na base. """
-        pass
