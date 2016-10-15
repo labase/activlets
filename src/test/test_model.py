@@ -56,3 +56,7 @@ class IssueTest(unittest.TestCase):
         """recupera valores de um issue"""
         self.app.retrieve(self.caretaker)
         self.caretaker.update.assert_called_with(**self.issue0)
+
+
+if __name__ == '__main__':
+    unittest.main()
