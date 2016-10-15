@@ -48,6 +48,7 @@ def initialize(project):
     header = open('header.py').read()
     project.set_property('dir_source_main_python', 'src')
     project.set_property('dir_source_unittest_python', 'src/test')
+    project.set_property('unittest_module_glob', 'test_*')
     # project.set_property('pybuilder_header_plugin_expected_header', header)
     project.set_property('pybuilder_header_plugin_break_build', True)
 
