@@ -23,11 +23,7 @@ O testa o modelo de aktask.
 """
 import unittest
 from aktask.model import Issue
-import sys
-if sys.version_info[0] == 2:
-    from mock import MagicMock, patch, ANY
-else:
-    from unittest.mock import MagicMock  # , patch, ANY
+from unittest.mock import MagicMock  # , patch, ANY
 
 
 class IssueTest(unittest.TestCase):

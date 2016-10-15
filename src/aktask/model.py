@@ -69,4 +69,3 @@ class Issue:
         keys = "number, title, body, user, labels, milestone, state, size, assignee".split(", ")
         memento = {key: getattr(self, key) for key in keys}
         caretaker.update(**memento)
-
