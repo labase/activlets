@@ -23,6 +23,12 @@ O módulo aktask propõe um modelo de acesso a atividades ligadas a issues do gi
 """
 
 
+class Project:
+    def __init__(self, name=None):
+        self.name = name
+        self.issue = []
+
+
 class Issue:
     def __init__(self, number, title, body, user, labels, milestone, state, size, assignee=None):
         """
@@ -69,3 +75,36 @@ class Issue:
         keys = "number, title, body, user, labels, milestone, state, size, assignee".split(", ")
         memento = {key: getattr(self, key) for key in keys}
         caretaker.update(**memento)
+
+
+class Facade:
+    class __FacadeSingleton:
+        def __init__(self):
+            self.model = {}
+
+        def insert_project(self, name):
+            self.model[name] = Project(name)
+
+        def retrieve_project(self, name):
+            return self.model[name]
+
+        def insert_issue(self, name, **kwargs):
+            self.model[name].insert_issue(**kwargs)
+
+        def visit(self, visitor):
+            [model.visit(visitor) for model in self.model]
+    __instance = None
+
+    @classmethod
+    def __instantiate(cls):  # __new__ always a classmethod
+        Facade.__instance = Facade.__FacadeSingleton()
+        Facade.__instantiate = lambda: Facade.__instance
+
+    def __new__(cls):  # __new__ always a classmethod
+        return Facade.__instantiate()
+
+    def __getattr__(self, name):
+        return getattr(self.__instance, name)
+
+    def __setattr__(self, name, value):
+        return setattr(self.__instance, name, value)

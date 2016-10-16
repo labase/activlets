@@ -42,7 +42,7 @@ class IssueTest(unittest.TestCase):
 
     def test_create(self):
         """cria um issue"""
-        self.assertIsInstance(self.app, Issue, "Issue of instance not created")
+        self.assertIsInstance(self.app, Issue, "Issue of __instance not created")
 
     def test_update(self):
         """atualiza um issue"""
