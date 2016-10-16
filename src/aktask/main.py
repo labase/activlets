@@ -127,6 +127,16 @@ class MainWindow(Gtk.Window):
         self.header.set_title(group)
 
 
+class GtkIssue(Gtk.Box):
+    def __init__(self, text, i):
+        super(GtkIssue, self).__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, border_width=50, spacing=5)
+        self.pack_start(self.header, False, False, 0)
+        lbl = Gtk.Label("%s - %d" % (text, i), xalign=0.0)
+        self.pack_start(lbl, False, False, 0)
+        self.progress = Gtk.ProgressBar()
+        self.pack_start(self.progress, False, False, 0)
+
 win = MainWindow()
 win.show_all()
 Gtk.main()
