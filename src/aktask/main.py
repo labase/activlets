@@ -1,5 +1,6 @@
 from github import Github
 import gi
+import os
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, Gio
 
@@ -92,11 +93,12 @@ class MainWindow(Gtk.Window):
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
                           border_width=50,
                           spacing=5)
-            g = Github("cetoli", "labase.g1thub")
+            print(str(os.getenv("AKTASK")))
+            g = Github("cetoli", str(os.getenv("AKTASK")))
             issues = g.get_user("labase").get_repo("eica").get_issues()
             # Then play with your Github objects:
             for issue in issues:
-                lbl = Gtk.Label(":".join(l.name for l in issue.labels) + ": %s - %d" % (issue.title, issue.number), xalign=0.0)
+                lbl = GtkIssue(":".join(l.name for l in issue.labels) + ": %s - %d" % (issue.title, issue.number))
                 box.pack_start(lbl, False, False, 0)
             self.stack.add_named(box, text)
 
@@ -128,10 +130,12 @@ class MainWindow(Gtk.Window):
 
 
 class GtkIssue(Gtk.Box):
-    def __init__(self, text, i):
-        super(GtkIssue, self).__init__(orientation=Gtk.Orientation.VERTICAL)
-        self.header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, border_width=50, spacing=5)
-        self.pack_start(self.header, False, False, 0)
+    def __init__(self, text="", i=0):
+        super(GtkIssue, self).__init__(orientation=Gtk.Orientation.VERTICAL, border_width=3)
+        # self.header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, border_width=50, spacing=5)
+        # hdr = Gtk.Label("eica issue", xalign=0.0)
+        # self.pack_start(self.header, False, False, 0)
+        # self.header.pack_start(hdr, False, False, 0)
         lbl = Gtk.Label("%s - %d" % (text, i), xalign=0.0)
         self.pack_start(lbl, False, False, 0)
         self.progress = Gtk.ProgressBar()
