@@ -22,8 +22,8 @@ O testa o modelo de aktask.
 
 """
 import unittest
-from aktask.model import Issue
-from unittest.mock import MagicMock  # , patch, ANY
+from aktask.model import Issue, Facade, Project
+from unittest.mock import MagicMock, call  # , patch, ANY
 
 
 class IssueTest(unittest.TestCase):
@@ -56,6 +56,43 @@ class IssueTest(unittest.TestCase):
         """recupera valores de um issue"""
         self.app.retrieve(self.caretaker)
         self.caretaker.update.assert_called_with(**self.issue0)
+
+    def test_facade_singleton(self):
+        """verifica se facade é singleton"""
+        self.assertIs(Facade(), Facade())
+
+    def test_facade_manage_project(self):
+        """insere e recupera projeto"""
+        project = Facade().insert_project("test")
+        self.assertIsInstance(project, Project, "%s not instance of Project" % project)
+        project = Facade().retrieve_project("test")
+        self.assertIsInstance(project, Project, "%s not instance of Project" % project)
+
+    @staticmethod
+    def _test_facade_manage_issue(project="test", **kwargs):
+        """insere e recupera issue"""
+        proj = Facade().insert_project(project)
+        return proj, Facade().insert_issue(project, **kwargs)
+
+    def test_facade_manage_issue(self):
+        """insere e recupera issue"""
+        _, issue = self._test_facade_manage_issue("test", title="issue")
+        self.assertIsInstance(issue, Issue, "%s not instance of Issue" % issue)
+        issue = Facade().retrieve_issue("test", 0)
+        self.assertIsInstance(issue, Issue, "%s not instance of Issue" % issue)
+        self.assertEqual(issue.title, "issue", "Issue title is not issue, else is %s" % issue.title)
+
+    def test_facade_visit_issue(self):
+        """visita issue"""
+        project, issue = self._test_facade_manage_issue("test", title="issue")
+        visitor = MagicMock("visitor")
+        visitor.visit = MagicMock("visit")
+        self.assertIsInstance(issue, Issue, "%s not instance of Issue" % issue)
+        Facade().accept(visitor)
+        self.assertEqual(visitor.visit.call_count, 2)
+        mc = visitor.mock_calls
+        calls = [call(project), call(issue)]
+        visitor.visit.assert_has_calls(calls)
 
 
 if __name__ == '__main__':
