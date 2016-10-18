@@ -36,6 +36,14 @@ class Project:
         self.issue.append(issue)
         return issue
 
+    def update(self, name=None):
+        """
+        Atividade programada para um projeto.
+
+        :param name: Nome do projeto
+        """
+        self.name = name or self.name
+
     def accept(self, visitor):
         """
         Recebe um visitante.
@@ -66,7 +74,7 @@ class Issue:
         self.number, self.title, self.user, self.labels, self.milestone, self.state, self.size, self.assignee =\
             number, title, user, labels, milestone, state, size, assignee
 
-    def update(self, number, title, body, user, labels, milestone, state, size, assignee=None):
+    def update(self, number=0, title="", body="", user="", labels="", milestone="", state=0, size=0, assignee=None):
         """
         Atividade programada para um projeto.
 
@@ -82,7 +90,8 @@ class Issue:
         """
         self.body = body
         self.number, self.title, self.user, self.labels, self.milestone, self.state, self.size, self.assignee =\
-            number, title, user, labels, milestone, state, size, assignee
+            number or self.number, title or self.title, user or self.user, labels or self.labels, \
+            milestone or self.milestone, state or self.state, size or self.size, assignee or self.assignee
 
     def retrieve(self, caretaker):
         """

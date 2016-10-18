@@ -90,10 +90,23 @@ class IssueTest(unittest.TestCase):
         self.assertIsInstance(issue, Issue, "%s not instance of Issue" % issue)
         Facade().accept(visitor)
         self.assertEqual(visitor.visit.call_count, 2)
-        mc = visitor.mock_calls
         calls = [call(project), call(issue)]
         visitor.visit.assert_has_calls(calls)
 
+    def test_facade_visit_effect_issue(self):
+        """visita issue com efeito"""
+        names = [dict(name="part"), dict(title="issue0")]
+        project, issue = self._test_facade_manage_issue("test", title="issue")
+        visitor = MagicMock("visitor")
+        visitor.visit = MagicMock("visit")
+        visitor.visit.side_effect = lambda p: p.update(**names.pop(0))
+        # visitor.visit.side_effect = [lambda p: p.update(name="project0"), lambda i: i.update(title="issue0")]
+        Facade().accept(visitor)
+        self.assertEqual(visitor.visit.call_count, 2)
+        calls = [call(project), call(issue)]
+        visitor.visit.assert_has_calls(calls)
+        self.assertEqual(project.name, "part")
+        self.assertEqual(issue.title, "issue0")
 
 if __name__ == '__main__':
     unittest.main()
