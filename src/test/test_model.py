@@ -23,7 +23,7 @@ O testa o modelo de aktask.
 """
 import unittest
 from aktask.model import Issue, Facade, Project
-from unittest.mock import MagicMock, call  # , patch, ANY
+from unittest.mock import MagicMock, call, patch  # , ANY
 
 
 class IssueTest(unittest.TestCase):
@@ -93,6 +93,27 @@ class IssueTest(unittest.TestCase):
         mc = visitor.mock_calls
         calls = [call(project), call(issue)]
         visitor.visit.assert_has_calls(calls)
+
+    def _mock_github(self):
+        with patch("github.Github") as MockGh:
+            instance = MockGh.return_value
+            instance.get_user.return_value = instance.get_repo.return_value = \
+                instance.get_issues.return_value = instance
+            mockissue = MagicMock("mockissue")
+            instance.issues = [mockissue]
+            mockissue.labels = ["la", "lb"]
+            mockissue.title = "ta"
+            mockissue.number = "2016"
+            return instance, mockissue
+
+    def test_control_fill_with_data(self):
+        from control import MainControl
+        mc = MainControl()
+        # self.assertIsNotNone(Facade().retrieve_project("eica"), "MainControl failed to create eica")
+        mg, _ = self._mock_github()
+        mc.fill_with_data(reader=mg)
+        mg.get_user.assert_called_once_with("labase")
+        mg.get_repo.assert_called_once_with("eica")
 
 
 if __name__ == '__main__':

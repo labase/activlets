@@ -31,10 +31,10 @@ class MainControl:
     def __init__(self):
         self.model = Facade().insert_project("eica")
 
-    def fill_with_data(self):
+    def fill_with_data(self, reader=None):
         def _list_repos():
             print(str(os.getenv("AKTASK")))
-            g = Github("cetoli", str(os.getenv("AKTASK")))
+            g = reader or Github("cetoli", str(os.getenv("AKTASK")))
             issues = g.get_user("labase").get_repo("eica").get_issues()
             # Then play with your Github objects:
             for issue in issues:

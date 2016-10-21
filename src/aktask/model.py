@@ -114,7 +114,7 @@ class Facade:
             return project
 
         def retrieve_project(self, name):
-            return self.model[name]
+            return self.model[name] if name in self.model else None
 
         def insert_issue(self, name, **kwargs):
             return self.model[name].insert_issue(**kwargs)
