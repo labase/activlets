@@ -36,15 +36,12 @@ class MainControl:
         pass
 
     def fill_with_data(self, reader=None):
-        def _list_repos():
-            print(str(os.getenv("AKTASK")))
-            g = reader or Github("cetoli", str(os.getenv("AKTASK")))
-            issues = g.get_user("labase").get_repo("eica").get_issues()
-            # Then play with your Github objects:
+        # print(str(os.getenv("AKTASK")))
+        g = reader or Github("cetoli", str(os.getenv("AKTASK")))
+        issues = g.get_user("labase").get_repo("eica").get_issues()
 
-            for issue in issues:
-                # label = ":".join(l.name for l in issue.labels) + ": %s - %d" % (issue.title, issue.number)
-                print("fill_with_data", issue.number, issue.title)
-                Facade().insert_issue("eica", number=issue.number, title=issue.title, body=issue.body,
-                                      labels=issue.labels, milestone=issue.milestone.title, state=issue.state, size=0)
-        _list_repos()
+        for issue in issues:
+            Facade().insert_issue("eica", number=issue.number, title=issue.title, body=issue.body,
+                                  labels=issue.labels,
+                                  milestone=issue.milestone.title if issue.milestone is not None else "",
+                                  state=issue.state, size=0)

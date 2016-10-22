@@ -33,7 +33,19 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Activ Tasks")
         self.set_size_request(800, 400)
+        self.object_being_built = self
+        self.build_stack = []
+        self.stack_layer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, border_width=50, spacing=5)
 
+        self.stack = Gtk.Stack(homogeneous=False)
+        self.listbox = Gtk.ListBox()
+        self.build_window()
+
+    def build(self, part=""):
+        self.object_being_built.add(part)
+        self.object_being_built = self.build_stack.pop() if self.build_stack else self.object_being_built
+
+    def build_window(self, name=""):
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -42,68 +54,32 @@ class MainWindow(Gtk.Window):
         vboxl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         hbox.pack_start(vboxl, False, False, 0)
 
-        self.listbox = Gtk.ListBox()
         vboxl.pack_start(self.listbox, True, True, 0)
 
-        self.stack = Gtk.Stack(homogeneous=False)
         hbox.pack_start(self.stack, True, True, 0)
-
-        self.fill_with_data()
 
         self.add(vbox)
         self.connect("destroy", Gtk.main_quit)
+        self.build_stack.append(self.listbox)
 
-    def fill_with_data(self):
+    def build_issue(self, **kwargs):
+        lbl = GtkIssue(**kwargs)
+        self.stack_layer.pack_start(lbl, False, False, 0)
+        self.build_stack.append(self.stack)
 
-        def _items_box(text):
-            lbl = Gtk.Label(text, xalign=0.0)
-            row = Gtk.ListBoxRow()
-            row.add(lbl)
-            return row
-
-        def _list_repos(text):
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
-                          border_width=50,
-                          spacing=5)
-            print(str(os.getenv("AKTASK")))
-            g = Github("cetoli", str(os.getenv("AKTASK")))
-            issues = g.get_user("labase").get_repo("eica").get_issues()
-            # Then play with your Github objects:
-            for issue in issues:
-                lbl = GtkIssue(":".join(l.name for l in issue.labels) + ": %s - %d" % (issue.title, issue.number))
-                box.pack_start(lbl, False, False, 0)
-            self.stack.add_named(box, text)
-
-        def _lots_of_labels(text):
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
-                          border_width=50,
-                          spacing=5)
-            for i in range(15):
-                lbl = Gtk.Label("%s - %d" % (text, i), xalign=0.0)
-                box.pack_start(lbl, False, False, 0)
-            self.stack.add_named(box, text)
-
-        text = ["Github"]
-        for cat in text:
-            btn = _items_box(cat)
-            self.listbox.add(btn)
-            if cat == "Github":
-                _list_repos(cat)
-            else:
-                _lots_of_labels(cat)
-
-        widget = self.listbox.get_row_at_index(0)
-        self.listbox.select_row(widget)
+    def build_list(self, name=""):
+        lbl = Gtk.Label(name, xalign=0.0)
+        row = Gtk.ListBoxRow()
+        row.add(lbl)
+        self.listbox.add(row)
+        self.stack.add_named(self.stack_layer, name)
+        self.build_stack.append(self.stack)
 
 
 class GtkIssue(Gtk.Box):
-    def __init__(self, text="", i=0):
+    def __init__(self, title="", number=0, **kwargs):
         super(GtkIssue, self).__init__(orientation=Gtk.Orientation.VERTICAL, border_width=3)
-        # self.header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, border_width=50, spacing=5)
-        # hdr = Gtk.Label("eica issue", xalign=0.0)
-        # self.pack_start(self.header, False, False, 0)
-        # self.header.pack_start(hdr, False, False, 0)
-        lbl = Gtk.Label("%s - %d" % (text, i), xalign=0.0)
+        lbl = Gtk.Label("%s - %d" % (title, number), xalign=0.0)
         self.pack_start(lbl, False, False, 0)
         self.progress = Gtk.ProgressBar()
         self.pack_start(self.progress, False, False, 0)
@@ -114,17 +90,22 @@ class Visitor:
         self.gtk_builder = gtk_builder
 
     def build_project(self, name=""):
-        self.gtk_builder.build_list_item(name)
+        self.gtk_builder.build_list(name)
 
-    def build_issue(self, name=""):
-        self.gtk_builder.build_issue(name)
+    def build_issue(self, **kwargs):
+        self.gtk_builder.build_issue(**kwargs)
+
+    def update(self, **kwargs):
+        return self.build_project(**kwargs) if len(kwargs) == 1 else self.build_issue(**kwargs)
 
     def visit(self, model):
-        class Caretaker:
-            def update(self, **kwargs):
-                return self.build_project(**kwargs) if len(kwargs) == 1 else self.build_issue(**kwargs)
-        model.retriev(caretaker)
+        model.retrieve(self)
 
-win = MainWindow()
-win.show_all()
-Gtk.main()
+if __name__ == '__main__':
+    from aktask.control import MainControl
+    control = MainControl()
+    control.fill_with_data()
+    win = MainWindow()
+    control.render_data_to_gui(writer=Visitor(gtk_builder=win))
+    win.show_all()
+    Gtk.main()

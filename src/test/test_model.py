@@ -103,6 +103,7 @@ class IssueTest(unittest.TestCase):
             mockissue = MagicMock("mockissue")
             mockmile = MagicMock("mockmile")
             mockmile.title = "issue.milestone"
+            mockmile.return_value = True
             instance.get_issues.return_value = [mockissue]
             mockissue.labels = [{"la": "red"}, {"lb": "green"}]
             mockissue.title = "ta"
@@ -110,14 +111,15 @@ class IssueTest(unittest.TestCase):
             mockissue.body = "issue.body"
             mockissue.milestone = mockmile
             mockissue.state = "issue.state"
-            return instance, mockissue
+            return instance, mockmile
 
     def test_control_fill_with_data(self):
         """le do github e escreve no modelo"""
         mc = MainControl()
         self.assertIsNotNone(self.façade.retrieve_project("eica"), "MainControl failed to create eica")
-        mg, _ = self._mock_github()
+        mg, mm = self._mock_github()
         mc.fill_with_data(reader=mg)
+        print(mm.call_count)
         mg.get_user.assert_called_once_with("labase")
         mg.get_repo.assert_called_once_with("eica")
         issue = self.façade.retrieve_issue("eica", "2016")
@@ -153,7 +155,7 @@ class IssueTest(unittest.TestCase):
         self.assertEqual(2, mgtk.visit.call_count)
         visitor.update.assert_any_call(name="eica")
         issuedict = dict(assignee=None, body='issue.body', labels=[{'la': 'red'}, {'lb': 'green'}],
-                         milestone='issue.milestone', number=0, size=0, state='issue.state', title='ta', user='')
+                         milestone='issue.milestone', number='2016', size=0, state='issue.state', title='ta', user='')
         # cl = visitor.call_args_list
         # assert cl[1] == issuedict, cl[1]
         visitor.update.assert_any_call(**issuedict)

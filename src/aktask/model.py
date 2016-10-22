@@ -32,7 +32,7 @@ class Project:
         return self.issue[index] if index in self.issue else None
 
     def insert_issue(self, number="0", **kwargs):
-        issue = Issue(**kwargs)
+        issue = Issue(number=number, **kwargs)
         self.issue[number] = issue
         return issue
 
