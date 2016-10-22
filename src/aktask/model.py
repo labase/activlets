@@ -23,8 +23,50 @@ O módulo aktask propõe um modelo de acesso a atividades ligadas a issues do gi
 """
 
 
+class Project:
+    def __init__(self, name=None):
+        self.name = name
+        self.issue = {}
+
+    def retieve_issue(self, index):
+        return self.issue[index] if index in self.issue else None
+
+    def insert_issue(self, number="0", **kwargs):
+        issue = Issue(number=number, **kwargs)
+        self.issue[number] = issue
+        return issue
+
+    def update(self, name=None):
+        """
+        Atividade programada para um projeto.
+
+        :param name: Nome do projeto
+        """
+        self.name = name or self.name
+
+    def accept(self, visitor):
+        """
+        Recebe um visitante.
+
+        :param visitor: visitante
+        :return:
+        """
+        visitor.visit(self)
+        [issue.accept(visitor) for issue in self.issue.values()]
+
+    def retrieve(self, caretaker):
+        """
+        Transfere o memento para outro meio.
+        :param caretaker: Recebedor do memento
+        :return:
+        """
+        keys = "name".split(", ")
+        memento = {key: getattr(self, key) for key in keys}
+        caretaker.update(**memento)
+
+
 class Issue:
-    def __init__(self, number, title, body, user, labels, milestone, state, size, assignee=None):
+    def __init__(self, number=0, title="", body="", user="", labels="", milestone="", state=0, size=0, assignee=None):
         """
         Atividade programada para um projeto.
 
@@ -42,7 +84,7 @@ class Issue:
         self.number, self.title, self.user, self.labels, self.milestone, self.state, self.size, self.assignee =\
             number, title, user, labels, milestone, state, size, assignee
 
-    def update(self, number, title, body, user, labels, milestone, state, size, assignee=None):
+    def update(self, number=0, title="", body="", user="", labels="", milestone="", state=0, size=0, assignee=None):
         """
         Atividade programada para um projeto.
 
@@ -58,7 +100,8 @@ class Issue:
         """
         self.body = body
         self.number, self.title, self.user, self.labels, self.milestone, self.state, self.size, self.assignee =\
-            number, title, user, labels, milestone, state, size, assignee
+            number or self.number, title or self.title, user or self.user, labels or self.labels, \
+            milestone or self.milestone, state or self.state, size or self.size, assignee or self.assignee
 
     def retrieve(self, caretaker):
         """
@@ -69,3 +112,53 @@ class Issue:
         keys = "number, title, body, user, labels, milestone, state, size, assignee".split(", ")
         memento = {key: getattr(self, key) for key in keys}
         caretaker.update(**memento)
+
+    def accept(self, visitor):
+        """
+        Recebe um visitante.
+
+        :param visitor: visitante
+        :return:
+        """
+        visitor.visit(self)
+
+
+class Facade:
+    class __FacadeSingleton:
+        def __init__(self):
+            self.model = {}
+
+        def use_with_caution_empty_facade_model(self):
+            self.model = {}
+
+        def insert_project(self, name):
+            self.model[name] = project = Project(name)
+            return project
+
+        def retrieve_project(self, name):
+            return self.model[name] if name in self.model else None
+
+        def insert_issue(self, name, **kwargs):
+            return self.model[name].insert_issue(**kwargs)
+
+        def retrieve_issue(self, name, index):
+            return self.model[name].retieve_issue(index)
+
+        def accept(self, visitor):
+            [model.accept(visitor) for model in self.model.values()]
+    __instance = None
+
+    @classmethod
+    def __instantiate(cls):  # __new__ always a classmethod
+        Facade.__instance = Facade.__FacadeSingleton()
+        Facade.__instantiate = lambda lcls=0: Facade.__instance
+        return Facade.__instance
+
+    def __new__(cls):  # __new__ always a classmethod
+        return Facade.__instantiate()
+
+    def __getattr__(self, name):
+        return getattr(Facade.__instance, name)
+
+    def __setattr__(self, name, value):
+        return setattr(Facade.__instance, name, value)
