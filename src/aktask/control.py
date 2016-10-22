@@ -31,6 +31,10 @@ class MainControl:
     def __init__(self):
         self.model = Facade().insert_project("eica")
 
+    def render_data_to_gui(self, writer=None):
+        Facade().accept(writer)
+        pass
+
     def fill_with_data(self, reader=None):
         def _list_repos():
             print(str(os.getenv("AKTASK")))

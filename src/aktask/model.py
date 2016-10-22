@@ -54,6 +54,16 @@ class Project:
         visitor.visit(self)
         [issue.accept(visitor) for issue in self.issue.values()]
 
+    def retrieve(self, caretaker):
+        """
+        Transfere o memento para outro meio.
+        :param caretaker: Recebedor do memento
+        :return:
+        """
+        keys = "name".split(", ")
+        memento = {key: getattr(self, key) for key in keys}
+        caretaker.update(**memento)
+
 
 class Issue:
     def __init__(self, number=0, title="", body="", user="", labels="", milestone="", state=0, size=0, assignee=None):

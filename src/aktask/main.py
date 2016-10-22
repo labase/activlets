@@ -31,21 +31,10 @@ from gi.repository import Gtk, Gdk, Gio
 
 class MainWindow(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, title="Window")
+        Gtk.Window.__init__(self, title="Activ Tasks")
         self.set_size_request(800, 400)
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.header = Gtk.HeaderBar()
-        vbox.pack_start(self.header, False, False, 0)
-
-        icon = Gtk.Image()
-        icon.set_from_icon_name("edit-find-symbolic", Gtk.IconSize.BUTTON)
-        self.button = Gtk.ToggleButton()
-        self.button.add(icon)
-        self.button.connect("toggled", self._on_transition)
-        self.header.pack_start(self.button)
-        # label = Gtk.Label("This is a Label")
-        # header.pack_end(label)
 
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         vbox.pack_start(hbox, False, False, 0)
@@ -53,19 +42,7 @@ class MainWindow(Gtk.Window):
         vboxl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         hbox.pack_start(vboxl, False, False, 0)
 
-        self.revealer = Gtk.Revealer()
-        self.entry = Gtk.SearchEntry(
-            placeholder_text="Search Projects")
-        self.entry.props.margin_left = 15
-        self.entry.props.margin_right = 15
-        self.entry.props.margin_top = 5
-        self.entry.props.margin_bottom = 5
-        self.entry.connect("search-changed", self._on_search)
-        self.revealer.add(self.entry)
-        vboxl.pack_start(self.revealer, False, False, 0)
         self.listbox = Gtk.ListBox()
-        self.listbox.connect("row-selected", self._on_select_row)
-        self.listbox.set_filter_func(self._list_filter_func, None)
         vboxl.pack_start(self.listbox, True, True, 0)
 
         self.stack = Gtk.Stack(homogeneous=False)
@@ -74,36 +51,7 @@ class MainWindow(Gtk.Window):
         self.fill_with_data()
 
         self.add(vbox)
-        self.connect("key-press-event", self._on_key_press)
         self.connect("destroy", Gtk.main_quit)
-
-    def _on_search(self, _):
-        self.listbox.invalidate_filter()
-
-    def _list_filter_func(self, lista, _):
-        text = self.entry.get_text()
-        if not text:
-            return lista
-        lbl = lista.get_child()
-        if text.lower() in lbl.get_text().lower():
-            return lista
-
-    def _on_transition(self, btn):
-        if self.revealer.get_reveal_child():
-            self.revealer.set_reveal_child(False)
-            self.entry.set_text("")
-            btn.grab_focus()
-        else:
-            self.revealer.set_reveal_child(True)
-            self.entry.grab_focus()
-
-    def _on_key_press(self, _, event):
-        keyname = Gdk.keyval_name(event.keyval)
-        if keyname == 'Escape':
-            self.button.set_active(False)
-        if event.state and Gdk.ModifierType.CONTROL_MASK:
-            if keyname == 'f':
-                self.button.set_active(True)
 
     def fill_with_data(self):
 
@@ -147,11 +95,6 @@ class MainWindow(Gtk.Window):
         widget = self.listbox.get_row_at_index(0)
         self.listbox.select_row(widget)
 
-    def _on_select_row(self, listbox, row):
-        group = row.get_child().get_text()
-        self.stack.set_visible_child_name(group)
-        self.header.set_title(group)
-
 
 class GtkIssue(Gtk.Box):
     def __init__(self, text="", i=0):
@@ -164,6 +107,23 @@ class GtkIssue(Gtk.Box):
         self.pack_start(lbl, False, False, 0)
         self.progress = Gtk.ProgressBar()
         self.pack_start(self.progress, False, False, 0)
+
+
+class Visitor:
+    def __init__(self, gtk_builder):
+        self.gtk_builder = gtk_builder
+
+    def build_project(self, name=""):
+        self.gtk_builder.build_list_item(name)
+
+    def build_issue(self, name=""):
+        self.gtk_builder.build_issue(name)
+
+    def visit(self, model):
+        class Caretaker:
+            def update(self, **kwargs):
+                return self.build_project(**kwargs) if len(kwargs) == 1 else self.build_issue(**kwargs)
+        model.retriev(caretaker)
 
 win = MainWindow()
 win.show_all()

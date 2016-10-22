@@ -23,7 +23,8 @@ O testa o modelo de aktask.
 """
 import unittest
 from aktask.model import Issue, Facade, Project
-from unittest.mock import MagicMock, call, patch  # , ANY
+from aktask.control import MainControl
+from unittest.mock import MagicMock, call, patch, ANY
 
 
 class IssueTest(unittest.TestCase):
@@ -103,7 +104,7 @@ class IssueTest(unittest.TestCase):
             mockmile = MagicMock("mockmile")
             mockmile.title = "issue.milestone"
             instance.get_issues.return_value = [mockissue]
-            mockissue.labels = ["la", "lb"]
+            mockissue.labels = [{"la": "red"}, {"lb": "green"}]
             mockissue.title = "ta"
             mockissue.number = "2016"
             mockissue.body = "issue.body"
@@ -112,7 +113,7 @@ class IssueTest(unittest.TestCase):
             return instance, mockissue
 
     def test_control_fill_with_data(self):
-        from aktask.control import MainControl
+        """le do github e escreve no modelo"""
         mc = MainControl()
         self.assertIsNotNone(self.façade.retrieve_project("eica"), "MainControl failed to create eica")
         mg, _ = self._mock_github()
@@ -122,6 +123,41 @@ class IssueTest(unittest.TestCase):
         issue = self.façade.retrieve_issue("eica", "2016")
         self.assertIsNotNone(issue, "Facade failed to index issue")
         self.assertEqual(issue.milestone, "issue.milestone")
+
+    def _mock_gtk_writer(self):
+        MockGh = MagicMock("MockGh")
+        visitor = MagicMock("visitor")
+        visitor.update = visitor
+        instance = MockGh.return_value
+        instance.visit.side_effect = lambda vis: vis.retrieve(visitor)
+        return instance, visitor
+
+    def test_control_render_data_to_gui(self):
+        """le do modelo e escreve no gtk"""
+
+        def Any(cls):
+            class Any(cls):
+                def __eq__(self, other):
+                    return True
+
+            return Any()
+        mc = MainControl()
+        project = self.façade.retrieve_project("eica")
+        self.assertIsNotNone(project, "MainControl failed to create eica")
+        mgtk, visitor = self._mock_gtk_writer()
+        mc.fill_with_data(reader=self._mock_github()[0])
+        mc.render_data_to_gui(writer=mgtk)
+        issue = self.façade.retrieve_issue("eica", "2016")
+        mgtk.visit.assert_any_call(issue)
+        mgtk.visit.assert_any_call(project)
+        self.assertEqual(2, mgtk.visit.call_count)
+        visitor.update.assert_any_call(name="eica")
+        issuedict = dict(assignee=None, body='issue.body', labels=[{'la': 'red'}, {'lb': 'green'}],
+                         milestone='issue.milestone', number=0, size=0, state='issue.state', title='ta', user='')
+        # cl = visitor.call_args_list
+        # assert cl[1] == issuedict, cl[1]
+        visitor.update.assert_any_call(**issuedict)
+        self.assertEqual(2, visitor.update.call_count)
 
 if __name__ == '__main__':
     unittest.main()
