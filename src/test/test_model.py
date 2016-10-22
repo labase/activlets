@@ -34,6 +34,8 @@ class IssueTest(unittest.TestCase):
     def setUp(self):
         self.caretaker = MagicMock(name="caretaker")
         keys = "number, title, body, user, labels, milestone, state, size, assignee".split(", ")
+        self.façade = Facade()
+        Facade().use_with_caution_empty_facade_model()
 
         self.issue0 = {key: key+"0" for key in keys}
         self.issue1 = {key: key+"1" for key in keys}
@@ -68,17 +70,16 @@ class IssueTest(unittest.TestCase):
         project = Facade().retrieve_project("test")
         self.assertIsInstance(project, Project, "%s not instance of Project" % project)
 
-    @staticmethod
-    def _test_facade_manage_issue(project="test", **kwargs):
+    def _test_facade_manage_issue(self, project="test", **kwargs):
         """insere e recupera issue"""
-        proj = Facade().insert_project(project)
-        return proj, Facade().insert_issue(project, **kwargs)
+        proj = self.façade.insert_project(project)
+        return proj, self.façade.insert_issue(project, **kwargs)
 
     def test_facade_manage_issue(self):
         """insere e recupera issue"""
         _, issue = self._test_facade_manage_issue("test", title="issue")
         self.assertIsInstance(issue, Issue, "%s not instance of Issue" % issue)
-        issue = Facade().retrieve_issue("test", 0)
+        issue = Facade().retrieve_issue("test", "0")
         self.assertIsInstance(issue, Issue, "%s not instance of Issue" % issue)
         self.assertEqual(issue.title, "issue", "Issue title is not issue, else is %s" % issue.title)
 
@@ -97,24 +98,30 @@ class IssueTest(unittest.TestCase):
     def _mock_github(self):
         with patch("github.Github") as MockGh:
             instance = MockGh.return_value
-            instance.get_user.return_value = instance.get_repo.return_value = \
-                instance.get_issues.return_value = instance
+            instance.get_user.return_value = instance.get_repo.return_value = instance
             mockissue = MagicMock("mockissue")
-            instance.issues = [mockissue]
+            mockmile = MagicMock("mockmile")
+            mockmile.title = "issue.milestone"
+            instance.get_issues.return_value = [mockissue]
             mockissue.labels = ["la", "lb"]
             mockissue.title = "ta"
             mockissue.number = "2016"
+            mockissue.body = "issue.body"
+            mockissue.milestone = mockmile
+            mockissue.state = "issue.state"
             return instance, mockissue
 
     def test_control_fill_with_data(self):
-        from control import MainControl
+        from aktask.control import MainControl
         mc = MainControl()
-        # self.assertIsNotNone(Facade().retrieve_project("eica"), "MainControl failed to create eica")
+        self.assertIsNotNone(self.façade.retrieve_project("eica"), "MainControl failed to create eica")
         mg, _ = self._mock_github()
         mc.fill_with_data(reader=mg)
         mg.get_user.assert_called_once_with("labase")
         mg.get_repo.assert_called_once_with("eica")
-
+        issue = self.façade.retrieve_issue("eica", "2016")
+        self.assertIsNotNone(issue, "Facade failed to index issue")
+        self.assertEqual(issue.milestone, "issue.milestone")
 
 if __name__ == '__main__':
     unittest.main()

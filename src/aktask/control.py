@@ -24,7 +24,7 @@ O módulo aktask propõe um modelo de acesso a atividades ligadas a issues do gi
 
 from github import Github
 import os
-from model import Facade
+from aktask.model import Facade
 
 
 class MainControl:
@@ -37,7 +37,10 @@ class MainControl:
             g = reader or Github("cetoli", str(os.getenv("AKTASK")))
             issues = g.get_user("labase").get_repo("eica").get_issues()
             # Then play with your Github objects:
+
             for issue in issues:
-                label = ":".join(l.name for l in issue.labels) + ": %s - %d" % (issue.title, issue.number)
-                self.model.insert_issue("eica", title=label)
+                # label = ":".join(l.name for l in issue.labels) + ": %s - %d" % (issue.title, issue.number)
+                print("fill_with_data", issue.number, issue.title)
+                Facade().insert_issue("eica", number=issue.number, title=issue.title, body=issue.body,
+                                      labels=issue.labels, milestone=issue.milestone.title, state=issue.state, size=0)
         _list_repos()

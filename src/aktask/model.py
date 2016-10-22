@@ -26,14 +26,14 @@ O módulo aktask propõe um modelo de acesso a atividades ligadas a issues do gi
 class Project:
     def __init__(self, name=None):
         self.name = name
-        self.issue = []
+        self.issue = {}
 
     def retieve_issue(self, index):
-        return self.issue[index]
+        return self.issue[index] if index in self.issue else None
 
-    def insert_issue(self, **kwargs):
+    def insert_issue(self, number="0", **kwargs):
         issue = Issue(**kwargs)
-        self.issue.append(issue)
+        self.issue[number] = issue
         return issue
 
     def update(self, name=None):
@@ -52,7 +52,7 @@ class Project:
         :return:
         """
         visitor.visit(self)
-        [issue.accept(visitor) for issue in self.issue]
+        [issue.accept(visitor) for issue in self.issue.values()]
 
 
 class Issue:
@@ -118,6 +118,9 @@ class Facade:
         def __init__(self):
             self.model = {}
 
+        def use_with_caution_empty_facade_model(self):
+            self.model = {}
+
         def insert_project(self, name):
             self.model[name] = project = Project(name)
             return project
@@ -145,7 +148,7 @@ class Facade:
         return Facade.__instantiate()
 
     def __getattr__(self, name):
-        return getattr(self.__instance, name)
+        return getattr(Facade.__instance, name)
 
     def __setattr__(self, name, value):
-        return setattr(self.__instance, name, value)
+        return setattr(Facade.__instance, name, value)
